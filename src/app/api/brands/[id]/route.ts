@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,6 +19,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const { id } = await params;
+
     const body = await request.json();
     const { name, slug, description, logo, website, isActive } = body;
 
@@ -30,50 +32,44 @@ export async function PUT(
       );
     }
 
-    // Check if brand exists
+    // Check if brand exists and get current data
     const existingBrand = await prisma.brand.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existingBrand) {
       return NextResponse.json(
-        { error: 'Brand not found' },
+        { error: 'ยี่ห้อไม่พบ' },
         { status: 404 }
       );
     }
 
-    // Check if slug already exists (excluding current brand)
-    const slugExists = await prisma.brand.findUnique({
-      where: { 
-        slug,
-        NOT: { id: params.id }
-      }
-    });
+    // Check for duplicate name (excluding current brand)
+    if (name && name !== existingBrand.name) {
+      const duplicateNameBrand = await prisma.brand.findFirst({
+        where: {
+          name,
+          NOT: { id }
+        }
+      });
 
-    if (slugExists) {
-      return NextResponse.json(
-        { error: 'Slug already exists' },
-        { status: 400 }
-      );
+      if (duplicateNameBrand) {
+        return NextResponse.json(
+          { error: 'ชื่อยี่ห้อนี้มีอยู่แล้ว' },
+          { status: 400 }
+        );
+      }
     }
 
     // Update brand
     const updatedBrand = await prisma.brand.update({
-      where: { id: params.id },
+      where: { id },
       data: {
-        name,
-        slug,
-        description: description || '',
-        logo: logo || '',
-        website: website || '',
-        isActive: isActive !== undefined ? isActive : true
-      },
-      include: {
-        _count: {
-          select: {
-            products: true
-          }
-        }
+        ...(name && { name }),
+        ...(description && { description }),
+        ...(website && { website }),
+        ...(logo && { logo }),
+        ...(isActive !== undefined && { isActive })
       }
     });
 
@@ -93,7 +89,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -102,6 +98,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     // Check if user has admin role
     if (session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -109,7 +107,7 @@ export async function DELETE(
 
     // Check if brand exists
     const existingBrand = await prisma.brand.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: {
@@ -136,7 +134,7 @@ export async function DELETE(
 
     // Delete brand
     await prisma.brand.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({
