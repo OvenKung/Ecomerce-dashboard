@@ -230,7 +230,7 @@ export function UserRoleBadge() {
 }
 
 // Higher-Order Component สำหรับการป้องกันหน้า
-export function withPermission<T extends {}>(
+export function withPermission<T extends object>(
   WrappedComponent: React.ComponentType<T>,
   resource: string,
   action: string
@@ -245,7 +245,7 @@ export function withPermission<T extends {}>(
 }
 
 // Higher-Order Component สำหรับการป้องกันหน้าตามบทบาท
-export function withRole<T extends {}>(
+export function withRole<T extends object>(
   WrappedComponent: React.ComponentType<T>,
   role: UserRole
 ) {

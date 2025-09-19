@@ -354,7 +354,7 @@ export default function RolesPermissionsPage() {
                               permission.action === 'READ' ? 'success' :
                               permission.action === 'CREATE' ? 'info' :
                               permission.action === 'UPDATE' ? 'warning' :
-                              permission.action === 'DELETE' ? 'destructive' :
+                              permission.action === 'DELETE' ? 'error' :
                               'secondary'
                             }
                           >

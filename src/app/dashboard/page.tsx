@@ -324,7 +324,11 @@ export default function DashboardPage() {
               key={stat.name}
               title={stat.name}
               value={stat.value}
-              trend={parseFloat(stat.change.replace('%', '').replace('+', ''))}
+              trend={{
+                value: parseFloat(stat.change.replace('%', '').replace('+', '')),
+                isPositive: parseFloat(stat.change.replace('%', '').replace('+', '')) >= 0,
+                period: 'vs last month'
+              }}
               icon={stat.icon}
               color={
                 stat.name === 'Total Revenue' ? 'blue' :

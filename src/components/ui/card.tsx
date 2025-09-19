@@ -33,7 +33,7 @@ interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
   justify?: 'start' | 'center' | 'end' | 'between'
 }
 
-interface StatCardProps {
+interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string
   value: string | number
   description?: string

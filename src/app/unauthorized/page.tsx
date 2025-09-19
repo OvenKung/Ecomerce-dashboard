@@ -4,19 +4,14 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePermission } from '@/hooks/use-permission'
 
-interface UnauthorizedPageProps {
-  message?: string
-  redirectPath?: string
-  autoRedirectDelay?: number
-}
-
-export default function UnauthorizedPage({ 
-  message = 'คุณไม่มีสิทธิ์ในการเข้าถึงหน้านี้',
-  redirectPath = '/dashboard',
-  autoRedirectDelay = 5000
-}: UnauthorizedPageProps) {
+export default function UnauthorizedPage() {
   const router = useRouter()
   const { userRole, isAuthenticated } = usePermission()
+  
+  // Default values that were previously props
+  const message = 'คุณไม่มีสิทธิ์ในการเข้าถึงหน้านี้'
+  const redirectPath = '/dashboard'
+  const autoRedirectDelay = 5000
 
   useEffect(() => {
     if (!isAuthenticated) {
