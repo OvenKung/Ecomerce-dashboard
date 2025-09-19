@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkPermission } from '@/lib/permission-middleware'
 import bcrypt from 'bcryptjs'
 
 export async function GET(
@@ -9,16 +10,33 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // ตรวจสอบสิทธิ์ในการดูข้อมูลผู้ใช้
+    const permissionCheck = await checkPermission('USERS', 'READ')
+    if (!permissionCheck.success) {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: permissionCheck.message 
+        }, 
+        { status: 403 }
+      )
     }
 
     const { id } = await params
+    const session = await getServerSession(authOptions)
 
-    // Only admin can access user details or user accessing their own data
-    if (session.user.role !== 'ADMIN' && session.user.id !== id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // อนุญาตให้ดูข้อมูลตัวเองหรือมีสิทธิ์จัดการผู้ใช้
+    const canAccessOtherUsers = permissionCheck.userRole && ['ADMIN', 'SUPER_ADMIN'].includes(permissionCheck.userRole)
+    const isOwnProfile = session?.user?.id === id
+
+    if (!canAccessOtherUsers && !isOwnProfile) {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: 'คุณสามารถดูได้เฉพาะข้อมูลของตัวเองเท่านั้น' 
+        }, 
+        { status: 403 }
+      )
     }
 
     const user = await prisma.user.findUnique({
@@ -65,19 +83,47 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
+    
+    // ตรวจสอบสิทธิ์ในการแก้ไขข้อมูลผู้ใช้
+    const permissionCheck = await checkPermission('USERS', 'UPDATE')
+    if (!permissionCheck.success) {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: permissionCheck.message 
+        }, 
+        { status: 403 }
+      )
+    }
+
     const session = await getServerSession(authOptions)
-
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Only admin can update any user or user updating their own data
-    if (session.user.role !== 'ADMIN' && session.user.id !== id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const body = await request.json()
     const { name, email, password, role, status } = body
+
+    // อนุญาตให้แก้ไขข้อมูลตัวเองหรือมีสิทธิ์จัดการผู้ใช้
+    const canUpdateOtherUsers = permissionCheck.userRole && ['ADMIN', 'SUPER_ADMIN'].includes(permissionCheck.userRole)
+    const isOwnProfile = session?.user?.id === id
+
+    if (!canUpdateOtherUsers && !isOwnProfile) {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: 'คุณสามารถแก้ไขได้เฉพาะข้อมูลของตัวเองเท่านั้น' 
+        }, 
+        { status: 403 }
+      )
+    }
+
+    // ตรวจสอบการเปลี่ยนบทบาท - เฉพาะ SUPER_ADMIN เท่านั้น
+    if (role && permissionCheck.userRole !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: 'เฉพาะ Super Administrator เท่านั้นที่สามารถเปลี่ยนบทบาทผู้ใช้ได้' 
+        }, 
+        { status: 403 }
+      )
+    }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -91,10 +137,13 @@ export async function PUT(
       )
     }
 
-    // Non-admin users cannot change role or status
-    if (session.user.role !== 'ADMIN' && (role || status)) {
+    // ป้องกันการแก้ไขสถานะโดยผู้ใช้ทั่วไป
+    if (status !== undefined && !canUpdateOtherUsers) {
       return NextResponse.json(
-        { error: 'ไม่สามารถเปลี่ยนสิทธิ์หรือสถานะได้' },
+        { 
+          error: 'Forbidden',
+          message: 'คุณไม่มีสิทธิ์ในการเปลี่ยนสถานะผู้ใช้' 
+        }, 
         { status: 403 }
       )
     }
@@ -126,8 +175,8 @@ export async function PUT(
         ...(name !== undefined && { name }),
         ...(email && { email }),
         ...(hashedPassword && { password: hashedPassword }),
-        ...(role && session.user.role === 'ADMIN' && { role }),
-        ...(status !== undefined && session.user.role === 'ADMIN' && { status })
+        ...(role && permissionCheck.userRole === 'SUPER_ADMIN' && { role }),
+        ...(status !== undefined && canUpdateOtherUsers && { status })
       },
       select: {
         id: true,
@@ -161,18 +210,23 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    
+    // ตรวจสอบสิทธิ์ในการลบผู้ใช้
+    const permissionCheck = await checkPermission('USERS', 'DELETE')
+    if (!permissionCheck.success) {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: permissionCheck.message 
+        }, 
+        { status: 403 }
+      )
     }
 
-    // Only admin can delete users
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const session = await getServerSession(authOptions)
 
     // Prevent self-deletion
-    if (session.user.id === id) {
+    if (session?.user?.id === id) {
       return NextResponse.json(
         { error: 'ไม่สามารถลบบัญชีของตัวเองได้' },
         { status: 400 }
@@ -188,6 +242,17 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'ไม่พบผู้ใช้' },
         { status: 404 }
+      )
+    }
+
+    // เฉพาะ SUPER_ADMIN เท่านั้นที่สามารถลบผู้ใช้ที่มีบทบาทสูงได้
+    if (['ADMIN', 'SUPER_ADMIN'].includes(existingUser.role) && permissionCheck.userRole !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: 'เฉพาะ Super Administrator เท่านั้นที่สามารถลบ Admin หรือ Super Admin ได้' 
+        }, 
+        { status: 403 }
       )
     }
 

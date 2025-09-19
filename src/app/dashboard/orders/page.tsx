@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useToastNotification } from '@/hooks/use-toast-notification'
 import { 
   Search, 
   Filter, 
@@ -21,6 +22,18 @@ import {
   MapPin,
   Download
 } from 'lucide-react'
+import { Button, IconButton } from '@/components/ui/button'
+import { Card, StatCard } from '@/components/ui/card'
+import { 
+  EnhancedTable, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableRow, 
+  TableCell, 
+  Badge, 
+  Pagination 
+} from '@/components/ui/table'
 
 // Types
 type OrderStatus = 'PENDING' | 'PAID' | 'PACKED' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED'
@@ -89,6 +102,7 @@ const formatCurrency = (amount: number): string => {
 
 export default function OrdersPage() {
   const { data: session } = useSession()
+  const toast = useToastNotification()
   const [orders, setOrders] = useState<Order[]>([])
   const [summary, setSummary] = useState<OrderSummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -121,9 +135,12 @@ export default function OrdersPage() {
         setOrders(data.orders)
         setSummary(data.summary)
         setTotalPages(data.pagination.totalPages)
+      } else {
+        toast.showError('ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้')
       }
     } catch (error) {
       console.error('Error fetching orders:', error)
+      toast.showError('เกิดข้อผิดพลาดในการโหลดข้อมูล')
     } finally {
       setLoading(false)
     }
@@ -144,11 +161,14 @@ export default function OrdersPage() {
         await fetchOrders() // Refresh orders list
         setSelectedOrder(null)
         setShowModal(false)
+        toast.showSuccess('อัปเดตสถานะคำสั่งซื้อเรียบร้อยแล้ว')
       } else {
         console.error('Failed to update order status')
+        toast.showError('ไม่สามารถอัปเดตสถานะคำสั่งซื้อได้')
       }
     } catch (error) {
       console.error('Error updating order status:', error)
+      toast.showError('เกิดข้อผิดพลาดในการอัปเดตสถานะ')
     }
   }
 
@@ -162,11 +182,14 @@ export default function OrdersPage() {
         await fetchOrders() // Refresh orders list
         setSelectedOrder(null)
         setShowDeleteModal(false)
+        toast.showSuccess('ลบคำสั่งซื้อเรียบร้อยแล้ว')
       } else {
         console.error('Failed to delete order')
+        toast.showError('ไม่สามารถลบคำสั่งซื้อได้')
       }
     } catch (error) {
       console.error('Error deleting order:', error)
+      toast.showError('เกิดข้อผิดพลาดในการลบคำสั่งซื้อ')
     }
   }
 
@@ -219,26 +242,31 @@ export default function OrdersPage() {
       PENDING: { 
         label: 'รอดำเนินการ', 
         color: 'bg-yellow-100 text-yellow-800',
+        variant: 'warning' as const,
         icon: Clock
       },
       PROCESSING: { 
         label: 'กำลังจัดเตรียม', 
         color: 'bg-blue-100 text-blue-800',
+        variant: 'info' as const,
         icon: Package
       },
       SHIPPED: { 
         label: 'จัดส่งแล้ว', 
         color: 'bg-purple-100 text-purple-800',
+        variant: 'secondary' as const,
         icon: Truck
       },
       DELIVERED: { 
         label: 'ส่งมอบแล้ว', 
         color: 'bg-green-100 text-green-800',
+        variant: 'success' as const,
         icon: CheckCircle
       },
       CANCELLED: { 
         label: 'ยกเลิกแล้ว', 
         color: 'bg-red-100 text-red-800',
+        variant: 'error' as const,
         icon: AlertCircle
       }
     }
@@ -269,41 +297,51 @@ export default function OrdersPage() {
             <h1 className="text-2xl font-bold text-gray-900">จัดการคำสั่งซื้อ</h1>
             <p className="text-gray-500">ติดตามและจัดการคำสั่งซื้อทั้งหมด</p>
           </div>
-          <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+          <Button>
             <Download className="w-4 h-4 mr-2" />
             ส่งออกรายงาน
-          </button>
+          </Button>
         </div>
 
         {/* Summary Cards */}
         {summary && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-sm font-medium text-gray-500">คำสั่งซื้อทั้งหมด</div>
-              <div className="text-2xl font-bold text-gray-900">{summary.totalOrders}</div>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-sm font-medium text-gray-500">รอดำเนินการ</div>
-              <div className="text-2xl font-bold text-yellow-600">{summary.pending}</div>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-sm font-medium text-gray-500">กำลังจัดเตรียม</div>
-              <div className="text-2xl font-bold text-blue-600">{summary.processing}</div>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-sm font-medium text-gray-500">จัดส่งแล้ว</div>
-              <div className="text-2xl font-bold text-purple-600">{summary.shipped}</div>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-sm font-medium text-gray-500">ส่งมอบแล้ว</div>
-              <div className="text-2xl font-bold text-green-600">{summary.delivered}</div>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-sm font-medium text-gray-500">ยอดขายรวม</div>
-              <div className="text-2xl font-bold text-indigo-600">
-                {formatCurrency(summary.totalRevenue)}
-              </div>
-            </div>
+            <StatCard
+              title="คำสั่งซื้อทั้งหมด"
+              value={summary.totalOrders.toString()}
+              icon={ShoppingCart}
+              color="blue"
+            />
+            <StatCard
+              title="รอดำเนินการ"
+              value={summary.pending.toString()}
+              icon={Clock}
+              color="yellow"
+            />
+            <StatCard
+              title="กำลังจัดเตรียม"
+              value={summary.processing.toString()}
+              icon={Package}
+              color="purple"
+            />
+            <StatCard
+              title="จัดส่งแล้ว"
+              value={summary.shipped.toString()}
+              icon={Truck}
+              color="blue"
+            />
+            <StatCard
+              title="ส่งมอบแล้ว"
+              value={summary.delivered.toString()}
+              icon={CheckCircle}
+              color="green"
+            />
+            <StatCard
+              title="ยอดขายรวม"
+              value={formatCurrency(summary.totalRevenue)}
+              icon={DollarSign}
+              color="green"
+            />
           </div>
         )}
 
@@ -357,133 +395,105 @@ export default function OrdersPage() {
           </div>
 
           {/* Orders Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    คำสั่งซื้อ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ลูกค้า
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    สถานะ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ยอดรวม
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    วันที่สั่งซื้อ
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    การจัดการ
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {orders.map((order) => {
-                  const statusConfig = getStatusConfig(order.status)
-                  const StatusIcon = statusConfig.icon
-                  
-                  return (
-                    <tr key={order.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {order.orderNumber}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {order.items.length} รายการ
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {getCustomerName(order)}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {getCustomerEmail(order)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {statusConfig.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {formatCurrency(order.total)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {formatDate(order.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => handleViewOrder(order)}
-                            className="text-blue-600 hover:text-blue-900 p-1"
+          <EnhancedTable loading={loading}>
+            <TableHeader>
+              <TableRow>
+                <TableHead sortable>คำสั่งซื้อ</TableHead>
+                <TableHead>ลูกค้า</TableHead>
+                <TableHead>สถานะ</TableHead>
+                <TableHead sortable>ยอดรวม</TableHead>
+                <TableHead sortable>วันที่สั่งซื้อ</TableHead>
+                <TableHead className="text-right">การจัดการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orders.map((order) => {
+                const statusConfig = getStatusConfig(order.status)
+                const StatusIcon = statusConfig.icon
+                
+                return (
+                  <TableRow key={order.id} clickable>
+                    <TableCell>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {order.orderNumber}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {order.items.length} รายการ
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {getCustomerName(order)}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {getCustomerEmail(order)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusConfig.variant} className="gap-1">
+                        <StatusIcon className="w-3 h-3" />
+                        {statusConfig.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {formatCurrency(order.total)}
+                    </TableCell>
+                    <TableCell className="text-slate-600">
+                      {formatDate(order.createdAt)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end space-x-1">
+                        <IconButton
+                          size="sm"
+                          variant="ghost"
+                          icon={Eye}
+                          onClick={() => handleViewOrder(order)}
+                          className="hover:bg-blue-50 hover:text-blue-600"
+                        />
+                        {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                            className="text-xs border border-slate-300 rounded-md px-2 py-1 hover:border-slate-400 focus:border-blue-500 focus:outline-none transition-colors"
                           >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
-                            <select
-                              value={order.status}
-                              onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                              className="text-xs border border-gray-300 rounded px-2 py-1"
-                            >
-                              <option value="PENDING">รอดำเนินการ</option>
-                              <option value="PROCESSING">จัดเตรียม</option>
-                              <option value="SHIPPED">จัดส่ง</option>
-                              <option value="DELIVERED">ส่งมอบ</option>
-                              <option value="CANCELLED">ยกเลิก</option>
-                            </select>
-                          )}
-                          {(session?.user.role === 'ADMIN' || session?.user.role === 'SUPER_ADMIN') && (
-                            <button
-                              onClick={() => openDeleteModal(order)}
-                              className="text-red-600 hover:text-red-900 p-1"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                            <option value="PENDING">รอดำเนินการ</option>
+                            <option value="PROCESSING">จัดเตรียม</option>
+                            <option value="SHIPPED">จัดส่ง</option>
+                            <option value="DELIVERED">ส่งมอบ</option>
+                            <option value="CANCELLED">ยกเลิก</option>
+                          </select>
+                        )}
+                        {(session?.user.role === 'ADMIN' || session?.user.role === 'SUPER_ADMIN') && (
+                          <IconButton
+                            size="sm"
+                            variant="ghost"
+                            icon={Trash2}
+                            onClick={() => openDeleteModal(order)}
+                            className="hover:bg-red-50 hover:text-red-600"
+                          />
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </EnhancedTable>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-500">
-                หน้า {currentPage} จาก {totalPages}
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage(prev => prev - 1)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  ก่อนหน้า
-                </button>
-                <button
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  ถัดไป
-                </button>
-              </div>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={summary?.totalOrders || 0}
+            itemsPerPage={10}
+            onPageChange={setCurrentPage}
+          />
         </div>
 
         {/* Order Detail Modal */}
         {showModal && selectedOrder && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-10 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+          <div className="fixed inset-0 bg-transparent backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+            <div className="relative top-10 mx-auto p-5 border w-11/12 max-w-4xl shadow-2xl rounded-md bg-white">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-medium text-gray-900">
                   รายละเอียดคำสั่งซื้อ {selectedOrder.orderNumber}
@@ -577,8 +587,8 @@ export default function OrdersPage() {
 
         {/* Delete Modal */}
         {showDeleteModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl border">
               <h3 className="text-lg font-medium mb-4">ยืนยันการลบ</h3>
               <p className="text-gray-600 mb-6">
                 คุณแน่ใจหรือไม่ที่ต้องการลบคำสั่งซื้อ #{selectedOrder?.orderNumber} 

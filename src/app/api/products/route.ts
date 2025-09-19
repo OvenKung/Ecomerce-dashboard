@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const search = searchParams.get('search') || ''
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
 
     const skip = (page - 1) * limit
 
@@ -26,6 +28,13 @@ export async function GET(request: NextRequest) {
         { description: { contains: search } },
         { sku: { contains: search } }
       ]
+    }
+
+    if (startDate && endDate) {
+      where.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      }
     }
 
     // Execute queries

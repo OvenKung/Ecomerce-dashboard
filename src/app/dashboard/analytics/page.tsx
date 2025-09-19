@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useToastNotification } from '@/hooks/use-toast-notification'
 
 interface AnalyticsOverview {
   totalRevenue: number
@@ -76,6 +77,7 @@ interface Inventory {
 
 export default function AnalyticsPage() {
   const { data: session } = useSession()
+  const toast = useToastNotification()
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   
@@ -117,6 +119,7 @@ export default function AnalyticsPage() {
       }
     } catch (error) {
       console.error('Error fetching analytics:', error)
+      toast.showError('เกิดข้อผิดพลาดในการโหลดข้อมูลวิเคราะห์')
     } finally {
       setLoading(false)
     }

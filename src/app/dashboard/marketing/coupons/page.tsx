@@ -213,21 +213,21 @@ export default function CouponsPage() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      expired: 'bg-red-100 text-red-800',
-      scheduled: 'bg-blue-100 text-blue-800'
+      active: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+      inactive: 'bg-gray-100 text-gray-700 border border-gray-200',
+      expired: 'bg-red-100 text-red-800 border border-red-200',
+      scheduled: 'bg-blue-100 text-blue-800 border border-blue-200'
     }
     
     const labels = {
-      active: 'ใช้งาน',
+      active: 'ใช้งานได้',
       inactive: 'ปิดใช้งาน',
       expired: 'หมดอายุ',
       scheduled: 'รอเริ่มต้น'
     }
     
     return (
-      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${badges[status as keyof typeof badges]}`}>
+      <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${badges[status as keyof typeof badges]}`}>
         {labels[status as keyof typeof labels]}
       </span>
     )
@@ -237,59 +237,66 @@ export default function CouponsPage() {
     return <div>กำลังโหลด...</div>
   }
 
-  const canManage = ['ADMIN', 'MANAGER'].includes(session.user.role)
+  const canManage = ['ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(session.user.role)
+  
+  // Debug info
+  console.log('Session:', session)
+  console.log('User role:', session.user.role)
+  console.log('Can manage:', canManage)
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">จัดการคูปอง</h1>
-        <p className="text-gray-600">สร้างและจัดการคูปองส่วนลดสำหรับลูกค้า</p>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-800 mb-3">จัดการคูปอง</h1>
+        <p className="text-slate-600 text-lg">สร้างและจัดการคูปองส่วนลดสำหรับลูกค้า</p>
       </div>
 
       {/* Summary Cards */}
       {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">คูปองทั้งหมด</h3>
-            <p className="text-2xl font-bold text-gray-900">{summary.totalCoupons}</p>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">คูปองทั้งหมด</h3>
+            <p className="text-3xl font-bold text-slate-800">{summary.totalCoupons}</p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">ใช้งานได้</h3>
-            <p className="text-2xl font-bold text-green-600">{summary.activeCoupons}</p>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">ใช้งานได้</h3>
+            <p className="text-3xl font-bold text-emerald-600">{summary.activeCoupons}</p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">หมดอายุ</h3>
-            <p className="text-2xl font-bold text-red-600">{summary.expiredCoupons}</p>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">หมดอายุ</h3>
+            <p className="text-3xl font-bold text-red-500">{summary.expiredCoupons}</p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">การใช้งานรวม</h3>
-            <p className="text-2xl font-bold text-blue-600">{summary.totalUsage}</p>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">การใช้งานรวม</h3>
+            <p className="text-3xl font-bold text-blue-600">{summary.totalUsage}</p>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">ส่วนลดรวม</h3>
-            <p className="text-2xl font-bold text-purple-600">{formatCurrency(summary.totalDiscountGiven)}</p>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">ส่วนลดรวม</h3>
+            <p className="text-3xl font-bold text-purple-600">{formatCurrency(summary.totalDiscountGiven)}</p>
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <form onSubmit={handleSearch} className="space-y-4">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+        <form onSubmit={handleSearch} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">ค้นหาคูปอง</label>
               <input
                 type="text"
-                placeholder="ค้นหาคูปอง..."
+                placeholder="กรอกรหัสหรือชื่อคูปอง..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900 placeholder-slate-400"
               />
             </div>
             <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">สถานะ</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900"
               >
                 <option value="">สถานะทั้งหมด</option>
                 <option value="active">ใช้งานได้</option>
@@ -298,10 +305,11 @@ export default function CouponsPage() {
               </select>
             </div>
             <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">ประเภท</label>
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900"
               >
                 <option value="">ประเภททั้งหมด</option>
                 <option value="PERCENTAGE">เปอร์เซ็นต์</option>
@@ -309,6 +317,7 @@ export default function CouponsPage() {
               </select>
             </div>
             <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">เรียงตาม</label>
               <select
                 value={`${sortBy}-${sortOrder}`}
                 onChange={(e) => {
@@ -316,37 +325,41 @@ export default function CouponsPage() {
                   setSortBy(field)
                   setSortOrder(order)
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900"
               >
-                <option value="createdAt-desc">วันที่สร้าง (ใหม่ล่าสุด)</option>
+                                <option value="createdAt-desc">วันที่สร้าง (ล่าสุด)</option>
                 <option value="createdAt-asc">วันที่สร้าง (เก่าสุด)</option>
-                <option value="code-asc">รหัสคูปอง (A-Z)</option>
-                <option value="usageCount-desc">การใช้งาน (มาก-น้อย)</option>
+                <option value="endDate-asc">วันหมดอายุ (เร็วสุด)</option>
+                <option value="endDate-desc">วันหมดอายุ (ช้าสุด)</option>
+                <option value="usageCount-desc">การใช้งาน (มากสุด)</option>
+                <option value="usageCount-asc">การใช้งาน (น้อยสุด)</option>
               </select>
             </div>
           </div>
-          <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              ล้างตัวกรอง
-            </button>
-            <div className="space-x-2">
+          <div className="flex justify-between items-center pt-4">
+            <div className="flex space-x-3">
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold"
               >
                 ค้นหา
               </button>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="px-6 py-3 bg-gray-100 text-slate-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-semibold"
+              >
+                ล้างตัวกรอง
+              </button>
+            </div>
+            <div>
               {canManage && (
                 <button
                   type="button"
                   onClick={openCreateModal}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 font-semibold shadow-sm"
                 >
-                  สร้างคูปอง
+                  + สร้างคูปอง
                 </button>
               )}
             </div>
@@ -355,104 +368,108 @@ export default function CouponsPage() {
       </div>
 
       {/* Coupons Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-8 text-center">กำลังโหลด...</div>
+            <div className="p-12 text-center">
+              <div className="text-slate-600 text-lg">กำลังโหลด...</div>
+            </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     คูปอง
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     ประเภท
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     เงื่อนไข
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     การใช้งาน
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     วันหมดอายุ
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     การดำเนินการ
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {coupons.map((coupon) => (
-                  <tr key={coupon.id} className="hover:bg-gray-50">
+                  <tr key={coupon.id} className="hover:bg-slate-50 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-bold text-slate-900">
                           {coupon.code}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-slate-600 font-medium">
                           {coupon.name}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm font-bold text-slate-900">
                         {coupon.type === 'PERCENTAGE' ? `${coupon.value}%` : formatCurrency(coupon.value)}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-slate-500">
                         {coupon.type === 'PERCENTAGE' ? 'เปอร์เซ็นต์' : 'จำนวนเงิน'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm font-semibold text-slate-900">
                         ขั้นต่ำ {formatCurrency(coupon.minimumOrder)}
                       </div>
                       {coupon.maximumDiscount && (
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-slate-600">
                           สูงสุด {formatCurrency(coupon.maximumDiscount)}
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm font-semibold text-slate-900 mb-1">
                         {coupon.usageCount} / {coupon.usageLimit}
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
                         <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
                           style={{ width: `${(coupon.usageCount / coupon.usageLimit) * 100}%` }}
                         ></div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-700">
                       {formatDate(coupon.endDate)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(getCouponStatus(coupon))}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-y-1">
-                      <button
-                        onClick={() => openCouponModal(coupon)}
-                        className="text-blue-600 hover:text-blue-900 block"
-                      >
-                        ดูรายละเอียด
-                      </button>
-                      {canManage && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-y-2">
+                      <div className="flex flex-col space-y-1">
                         <button
-                          onClick={() => updateCouponStatus(coupon.id, !coupon.isActive)}
-                          className={`block ${
-                            coupon.isActive 
-                              ? 'text-red-600 hover:text-red-900' 
-                              : 'text-green-600 hover:text-green-900'
-                          }`}
+                          onClick={() => openCouponModal(coupon)}
+                          className="text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-150"
                         >
-                          {coupon.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                          ดูรายละเอียด
                         </button>
-                      )}
+                        {canManage && (
+                          <button
+                            onClick={() => updateCouponStatus(coupon.id, !coupon.isActive)}
+                            className={`font-semibold transition-colors duration-150 ${
+                              coupon.isActive 
+                                ? 'text-red-600 hover:text-red-800' 
+                                : 'text-emerald-600 hover:text-emerald-800'
+                            }`}
+                          >
+                            {coupon.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -463,38 +480,38 @@ export default function CouponsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div className="bg-slate-50 px-6 py-4 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-slate-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   ก่อนหน้า
                 </button>
                 <button
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg text-slate-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   ถัดไป
                 </button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm text-gray-700">
-                    แสดง <span className="font-medium">{(currentPage - 1) * 10 + 1}</span> ถึง{' '}
-                    <span className="font-medium">{Math.min(currentPage * 10, totalCoupons)}</span> จาก{' '}
-                    <span className="font-medium">{totalCoupons}</span> รายการ
+                  <p className="text-sm text-slate-700 font-medium">
+                    แสดง <span className="font-bold text-slate-900">{(currentPage - 1) * 10 + 1}</span> ถึง{' '}
+                    <span className="font-bold text-slate-900">{Math.min(currentPage * 10, totalCoupons)}</span> จาก{' '}
+                    <span className="font-bold text-slate-900">{totalCoupons}</span> รายการ
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <nav className="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px">
                     <button
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-3 py-2 rounded-l-lg border border-gray-300 bg-white text-sm font-semibold text-slate-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
                       ก่อนหน้า
                     </button>
@@ -505,10 +522,10 @@ export default function CouponsPage() {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-semibold transition-colors duration-200 ${
                             currentPage === page
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-700'
+                              : 'bg-white border-gray-300 text-slate-600 hover:bg-gray-50'
                           }`}
                         >
                           {page}
@@ -519,7 +536,7 @@ export default function CouponsPage() {
                     <button
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-3 py-2 rounded-r-lg border border-gray-300 bg-white text-sm font-semibold text-slate-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
                       ถัดไป
                     </button>
@@ -533,39 +550,41 @@ export default function CouponsPage() {
 
       {/* Coupon Detail Modal */}
       {showCouponModal && selectedCoupon && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">รายละเอียดคูปอง</h3>
-              <button
-                onClick={() => setShowCouponModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="relative bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-gray-200">
+            <div className="sticky top-0 bg-white px-8 py-6 border-b border-gray-200 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold text-slate-800">รายละเอียดคูปอง</h3>
+                <button
+                  onClick={() => setShowCouponModal(false)}
+                  className="text-slate-400 hover:text-slate-600 text-2xl font-bold transition-colors duration-200"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">รหัสคูปอง</label>
-                  <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">รหัสคูปอง</label>
+                  <p className="text-lg font-mono bg-slate-100 text-slate-900 px-4 py-3 rounded-lg border">
                     {selectedCoupon.code}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">ชื่อคูปอง</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedCoupon.name}</p>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อคูปอง</label>
+                  <p className="text-lg text-slate-900 font-semibold">{selectedCoupon.name}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">ประเภท</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">ประเภท</label>
+                  <p className="text-lg text-slate-900 font-semibold">
                     {selectedCoupon.type === 'PERCENTAGE' ? 'เปอร์เซ็นต์' : 'จำนวนเงิน'}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">ค่าส่วนลด</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">ค่าส่วนลด</label>
+                  <p className="text-lg text-slate-900 font-semibold">
                     {selectedCoupon.type === 'PERCENTAGE' 
                       ? `${selectedCoupon.value}%` 
                       : formatCurrency(selectedCoupon.value)
@@ -573,43 +592,43 @@ export default function CouponsPage() {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">ยอดขั้นต่ำ</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">ยอดขั้นต่ำ</label>
+                  <p className="text-lg text-slate-900 font-semibold">
                     {formatCurrency(selectedCoupon.minimumOrder)}
                   </p>
                 </div>
                 {selectedCoupon.maximumDiscount && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">ส่วนลดสูงสุด</label>
-                    <p className="mt-1 text-sm text-gray-900">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">ส่วนลดสูงสุด</label>
+                    <p className="text-lg text-slate-900 font-semibold">
                       {formatCurrency(selectedCoupon.maximumDiscount)}
                     </p>
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">วันที่เริ่มต้น</label>
-                  <p className="mt-1 text-sm text-gray-900">{formatDate(selectedCoupon.startDate)}</p>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">วันที่เริ่มต้น</label>
+                  <p className="text-lg text-slate-900 font-semibold">{formatDate(selectedCoupon.startDate)}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">วันหมดอายุ</label>
-                  <p className="mt-1 text-sm text-gray-900">{formatDate(selectedCoupon.endDate)}</p>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">วันหมดอายุ</label>
+                  <p className="text-lg text-slate-900 font-semibold">{formatDate(selectedCoupon.endDate)}</p>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">คำอธิบาย</label>
-                <p className="mt-1 text-sm text-gray-900">{selectedCoupon.description}</p>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-slate-700 mb-2">คำอธิบาย</label>
+                <p className="text-base text-slate-700 bg-slate-50 p-4 rounded-lg border">{selectedCoupon.description}</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">การใช้งาน</label>
-                <div className="mt-1 flex items-center space-x-4">
-                  <span className="text-sm text-gray-900">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-slate-700 mb-2">การใช้งาน</label>
+                <div className="flex items-center space-x-4">
+                  <span className="text-lg font-semibold text-slate-900">
                     {selectedCoupon.usageCount} / {selectedCoupon.usageLimit} ครั้ง
                   </span>
-                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div className="flex-1 bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full" 
+                      className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
                       style={{ width: `${(selectedCoupon.usageCount / selectedCoupon.usageLimit) * 100}%` }}
                     ></div>
                   </div>
@@ -617,32 +636,34 @@ export default function CouponsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">สถานะ</label>
-                <div className="mt-1">
+                <label className="block text-sm font-bold text-slate-700 mb-2">สถานะ</label>
+                <div>
                   {getStatusBadge(getCouponStatus(selectedCoupon))}
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => setShowCouponModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                ปิด
-              </button>
-              {canManage && (
+            <div className="sticky bottom-0 bg-white px-8 py-6 border-t border-gray-200 rounded-b-xl">
+              <div className="flex justify-end space-x-4">
                 <button
-                  onClick={() => updateCouponStatus(selectedCoupon.id, !selectedCoupon.isActive)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium text-white ${
-                    selectedCoupon.isActive 
-                      ? 'bg-red-600 hover:bg-red-700' 
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
+                  onClick={() => setShowCouponModal(false)}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-gray-50 transition-colors duration-200"
                 >
-                  {selectedCoupon.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                  ปิด
                 </button>
-              )}
+                {canManage && (
+                  <button
+                    onClick={() => updateCouponStatus(selectedCoupon.id, !selectedCoupon.isActive)}
+                    className={`px-6 py-3 rounded-lg text-sm font-semibold text-white transition-colors duration-200 ${
+                      selectedCoupon.isActive 
+                        ? 'bg-red-600 hover:bg-red-700' 
+                        : 'bg-emerald-600 hover:bg-emerald-700'
+                    }`}
+                  >
+                    {selectedCoupon.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -650,22 +671,24 @@ export default function CouponsPage() {
 
       {/* Create Coupon Modal */}
       {showCreateModal && canManage && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">สร้างคูปองใหม่</h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="relative bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl border border-gray-200">
+            <div className="sticky top-0 bg-white px-8 py-6 border-b border-gray-200 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold text-slate-800">สร้างคูปองใหม่</h3>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-slate-400 hover:text-slate-600 text-2xl font-bold transition-colors duration-200"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             
-            <form onSubmit={handleCreateCoupon} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleCreateCoupon} className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     รหัสคูปอง *
                   </label>
                   <input
@@ -673,13 +696,13 @@ export default function CouponsPage() {
                     required
                     value={formData.code}
                     onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900 placeholder-slate-400"
                     placeholder="เช่น SALE20"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     ชื่อคูปอง *
                   </label>
                   <input
@@ -687,32 +710,32 @@ export default function CouponsPage() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900 placeholder-slate-400"
                     placeholder="ชื่อคูปอง"
                   />
                 </div>
                 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     คำอธิบาย
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900 placeholder-slate-400"
                     placeholder="คำอธิบายคูปอง"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     ประเภทส่วนลด *
                   </label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({...formData, type: e.target.value as 'PERCENTAGE' | 'FIXED'})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900"
                   >
                     <option value="PERCENTAGE">เปอร์เซ็นต์</option>
                     <option value="FIXED">จำนวนเงิน</option>
@@ -720,7 +743,7 @@ export default function CouponsPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     ค่าส่วนลด *
                   </label>
                   <input
@@ -730,13 +753,13 @@ export default function CouponsPage() {
                     step={formData.type === 'PERCENTAGE' ? '1' : '0.01'}
                     value={formData.value}
                     onChange={(e) => setFormData({...formData, value: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900 placeholder-slate-400"
                     placeholder={formData.type === 'PERCENTAGE' ? 'เช่น 10' : 'เช่น 50'}
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     ยอดขั้นต่ำ *
                   </label>
                   <input
@@ -746,14 +769,14 @@ export default function CouponsPage() {
                     step="0.01"
                     value={formData.minimumOrder}
                     onChange={(e) => setFormData({...formData, minimumOrder: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900 placeholder-slate-400"
                     placeholder="ยอดขั้นต่ำ"
                   />
                 </div>
                 
                 {formData.type === 'PERCENTAGE' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">
                       ส่วนลดสูงสุด
                     </label>
                     <input
@@ -762,29 +785,28 @@ export default function CouponsPage() {
                       step="0.01"
                       value={formData.maximumDiscount}
                       onChange={(e) => setFormData({...formData, maximumDiscount: parseFloat(e.target.value)})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900 placeholder-slate-400"
                       placeholder="ส่วนลดสูงสุด"
                     />
                   </div>
                 )}
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     จำนวนครั้งที่ใช้ได้ *
                   </label>
                   <input
                     type="number"
-                    required
                     min="1"
                     value={formData.usageLimit}
                     onChange={(e) => setFormData({...formData, usageLimit: parseInt(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900 placeholder-slate-400"
                     placeholder="จำนวนครั้ง"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     วันที่เริ่มต้น *
                   </label>
                   <input
@@ -792,12 +814,12 @@ export default function CouponsPage() {
                     required
                     value={formData.startDate}
                     onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     วันหมดอายุ *
                   </label>
                   <input
@@ -805,35 +827,37 @@ export default function CouponsPage() {
                     required
                     value={formData.endDate}
                     onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-900"
                   />
                 </div>
               </div>
               
-              <div className="flex items-center">
+              <div className="flex items-center mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <input
                   type="checkbox"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                  className="h-4 w-4 text-blue-600 mr-2"
+                  className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2 mr-3"
                 />
-                <label className="text-sm text-gray-700">เปิดใช้งานทันที</label>
+                <label className="text-sm font-semibold text-slate-700">เปิดใช้งานทันที</label>
               </div>
               
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
-                >
-                  สร้างคูปอง
-                </button>
+              <div className="sticky bottom-0 bg-white pt-6 border-t border-gray-200 mt-8">
+                <div className="flex justify-end space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-6 py-3 border border-gray-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-sm"
+                  >
+                    สร้างคูปอง
+                  </button>
+                </div>
               </div>
             </form>
           </div>

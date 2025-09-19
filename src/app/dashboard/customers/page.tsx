@@ -2,6 +2,37 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useToastNotification } from '@/hooks/use-toast-notification'
+import { Button, IconButton } from '@/components/ui/button'
+import { Card, StatCard } from '@/components/ui/card'
+import { 
+  EnhancedTable, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableRow, 
+  TableCell, 
+  Badge, 
+  Pagination 
+} from '@/components/ui/table'
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  Plus, 
+  Eye, 
+  Edit, 
+  Trash2, 
+  Users, 
+  User,
+  UserCheck, 
+  UserMinus,
+  UserPlus,
+  Star, 
+  Calendar,
+  Mail,
+  Phone
+} from 'lucide-react'
 
 interface Customer {
   id: string
@@ -56,6 +87,7 @@ interface CustomerSummary {
 
 export default function CustomersPage() {
   const { data: session } = useSession()
+  const toast = useToastNotification()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [summary, setSummary] = useState<CustomerSummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -108,9 +140,12 @@ export default function CustomersPage() {
         setSummary(data.summary)
         setTotalPages(data.pagination.totalPages)
         setTotalCustomers(data.pagination.total)
+      } else {
+        toast.showError('ไม่สามารถโหลดข้อมูลลูกค้าได้')
       }
     } catch (error) {
       console.error('Error fetching customers:', error)
+      toast.showError('เกิดข้อผิดพลาดในการโหลดข้อมูล')
     } finally {
       setLoading(false)
     }
@@ -185,9 +220,10 @@ export default function CustomersPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'เกิดข้อผิดพลาด')
+        throw new Error(error.error || 'เกิดข้อผิดพลาด')
       }
 
+      toast.showSuccess('แก้ไขข้อมูลลูกค้าเรียบร้อยแล้ว')
       setShowEditModal(false)
       setSelectedCustomer(null)
       setEditCustomer({
@@ -202,6 +238,7 @@ export default function CustomersPage() {
       fetchCustomers()
     } catch (err: any) {
       console.error('Error editing customer:', err)
+      toast.showError(err.message || 'ไม่สามารถแก้ไขข้อมูลลูกค้าได้')
     }
   }
 
@@ -213,14 +250,16 @@ export default function CustomersPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'เกิดข้อผิดพลาด')
+        throw new Error(error.error || 'เกิดข้อผิดพลาด')
       }
 
+      toast.showSuccess('ลบลูกค้าเรียบร้อยแล้ว')
       setShowDeleteModal(false)
       setSelectedCustomer(null)
       fetchCustomers()
     } catch (err: any) {
       console.error('Error deleting customer:', err)
+      toast.showError(err.message || 'ไม่สามารถลบลูกค้าได้')
     }
   }
 
@@ -264,49 +303,65 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">จัดการลูกค้า</h1>
-        <p className="text-gray-600">จัดการข้อมูลลูกค้าและดูประวัติการซื้อสินค้า</p>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">จัดการลูกค้า</h1>
+          <p className="text-slate-600">จัดการข้อมูลลูกค้าและดูประวัติการซื้อสินค้า</p>
+        </div>
+        <Button leftIcon={Plus}>
+          เพิ่มลูกค้าใหม่
+        </Button>
       </div>
 
       {/* Summary Cards */}
       {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">ลูกค้าทั้งหมด</h3>
-            <p className="text-2xl font-bold text-gray-900">{summary.totalCustomers}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">ลูกค้าที่ใช้งาน</h3>
-            <p className="text-2xl font-bold text-green-600">{summary.activeCustomers}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">ยืนยันแล้ว</h3>
-            <p className="text-2xl font-bold text-blue-600">{summary.verifiedCustomers}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">ลูกค้าใหม่เดือนนี้</h3>
-            <p className="text-2xl font-bold text-purple-600">{summary.newThisMonth}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">ยอดขายรวม</h3>
-            <p className="text-2xl font-bold text-orange-600">{formatCurrency(summary.totalRevenue)}</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <StatCard
+            title="ลูกค้าทั้งหมด"
+            value={summary.totalCustomers.toString()}
+            icon={Users}
+            color="blue"
+          />
+          <StatCard
+            title="ลูกค้าที่ใช้งาน"
+            value={summary.activeCustomers.toString()}
+            icon={UserCheck}
+            color="green"
+          />
+          <StatCard
+            title="ยืนยันแล้ว"
+            value={summary.verifiedCustomers.toString()}
+            icon={Star}
+            color="blue"
+          />
+          <StatCard
+            title="ลูกค้าใหม่เดือนนี้"
+            value={summary.newThisMonth.toString()}
+            icon={Calendar}
+            color="purple"
+          />
+          <StatCard
+            title="ยอดขายรวม"
+            value={formatCurrency(summary.totalRevenue)}
+            icon={Star}
+            color="yellow"
+          />
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <Card className="p-6">
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="ค้นหาลูกค้า..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
@@ -350,242 +405,172 @@ export default function CustomersPage() {
               </select>
             </div>
           </div>
-          <div className="flex justify-between">
-            <button
-              type="button"
+          <div className="flex justify-between items-center">
+            <Button 
+              variant="ghost" 
               onClick={clearFilters}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
             >
               ล้างตัวกรอง
-            </button>
-            <div className="space-x-2">
-              <button
+            </Button>
+            <div className="flex space-x-2">
+              <Button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                leftIcon={Search}
               >
                 ค้นหา
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                leftIcon={Plus}
+                variant="outline"
               >
                 เพิ่มลูกค้า
-              </button>
+              </Button>
+              <IconButton
+                icon={Download}
+                variant="outline"
+                tooltip="ส่งออกข้อมูล"
+              />
             </div>
           </div>
         </form>
-      </div>
+      </Card>
 
       {/* Customers Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="p-8 text-center">กำลังโหลด...</div>
-          ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ลูกค้า
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ติดต่อ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    สถานะ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    คำสั่งซื้อ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ยอดซื้อ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    สมัครเมื่อ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    การดำเนินการ
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {customers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
-                              {getInitials(customer)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {getFullName(customer)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {customer.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.phone}</div>
-                      <div className="text-sm text-gray-500">
-                        {customer.segment}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col space-y-1">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          customer.status === 'ACTIVE'
-                            ? 'bg-green-100 text-green-800' 
-                            : customer.status === 'INACTIVE'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {customer.status === 'ACTIVE' ? 'ใช้งาน' : customer.status === 'INACTIVE' ? 'ไม่ใช้งาน' : 'บัญชีดำ'}
-                        </span>
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          customer.segment === 'VIP' 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : customer.segment === 'REGULAR'
-                            ? 'bg-blue-100 text-blue-800'
-                            : customer.segment === 'NEW'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {customer.segment === 'VIP' ? 'VIP' : customer.segment === 'REGULAR' ? 'ทั่วไป' : customer.segment === 'NEW' ? 'ใหม่' : 'เสี่ยง'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{customer.totalOrders} คำสั่งซื้อ</div>
-                      <div className="text-sm text-gray-500">
-                        {customer.lastOrderAt ? `ล่าสุด: ${formatDate(customer.lastOrderAt)}` : 'ยังไม่มีคำสั่งซื้อ'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatCurrency(customer.totalSpent)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(customer.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-y-1">
-                      <button
-                        onClick={() => openCustomerModal(customer)}
-                        className="text-blue-600 hover:text-blue-900 block"
-                      >
-                        ดูรายละเอียด
-                      </button>
-                      <button
-                        onClick={() => openEditModal(customer)}
-                        className="text-green-600 hover:text-green-900 block"
-                      >
-                        แก้ไข
-                      </button>
-                      <button
-                        onClick={() => updateCustomerStatus(customer.id, customer.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                        className={`block ${
-                          customer.status === 'ACTIVE'
-                            ? 'text-yellow-600 hover:text-yellow-900' 
-                            : 'text-green-600 hover:text-green-900'
-                        }`}
-                      >
-                        {customer.status === 'ACTIVE' ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(customer)}
-                        className="text-red-600 hover:text-red-900 block"
-                      >
-                        ลบ
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      <Card>
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-medium">รายการลูกค้า</h3>
         </div>
-
+        <EnhancedTable loading={loading}>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ลูกค้า</TableHead>
+              <TableHead>ติดต่อ</TableHead>
+              <TableHead>สถานะ</TableHead>
+              <TableHead>คำสั่งซื้อ</TableHead>
+              <TableHead>ยอดซื้อ</TableHead>
+              <TableHead>สมัครเมื่อ</TableHead>
+              <TableHead>การดำเนินการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {customers.map((customer) => (
+              <TableRow key={customer.id}>
+                <TableCell>
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {getFullName(customer)}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {customer.email}
+                      </div>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm text-gray-900">{customer.phone}</div>
+                  <div className="text-sm text-gray-500">
+                    {customer.segment}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col space-y-1">
+                    <Badge
+                      variant={
+                        customer.status === 'ACTIVE' ? 'success' :
+                        customer.status === 'INACTIVE' ? 'warning' : 'error'
+                      }
+                    >
+                      {customer.status === 'ACTIVE' ? 'ใช้งาน' : 
+                       customer.status === 'INACTIVE' ? 'ไม่ใช้งาน' : 'บัญชีดำ'}
+                    </Badge>
+                    <Badge
+                      variant={
+                        customer.segment === 'VIP' ? 'default' :
+                        customer.segment === 'REGULAR' ? 'info' :
+                        customer.segment === 'NEW' ? 'success' : 'error'
+                      }
+                    >
+                      {customer.segment === 'VIP' ? 'VIP' : 
+                       customer.segment === 'REGULAR' ? 'ทั่วไป' : 
+                       customer.segment === 'NEW' ? 'ใหม่' : 'เสี่ยง'}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm text-gray-900">{customer.totalOrders} คำสั่งซื้อ</div>
+                  <div className="text-sm text-gray-500">
+                    {customer.lastOrderAt ? `ล่าสุด: ${formatDate(customer.lastOrderAt)}` : 'ยังไม่มีคำสั่งซื้อ'}
+                  </div>
+                </TableCell>
+                <TableCell className="text-sm font-medium text-gray-900">
+                  {formatCurrency(customer.totalSpent)}
+                </TableCell>
+                <TableCell className="text-sm text-gray-500">
+                  {formatDate(customer.createdAt)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-1">
+                    <IconButton
+                      icon={Eye}
+                      variant="ghost"
+                      size="sm"
+                      tooltip="ดูรายละเอียด"
+                      onClick={() => openCustomerModal(customer)}
+                    />
+                    <IconButton
+                      icon={Edit}
+                      variant="ghost"
+                      size="sm"
+                      tooltip="แก้ไข"
+                      onClick={() => openEditModal(customer)}
+                    />
+                    <IconButton
+                      icon={customer.status === 'ACTIVE' ? UserMinus : UserPlus}
+                      variant="ghost"
+                      size="sm"
+                      tooltip={customer.status === 'ACTIVE' ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                      onClick={() => updateCustomerStatus(customer.id, customer.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+                      className={customer.status === 'ACTIVE' ? 'text-yellow-600 hover:text-yellow-700' : 'text-green-600 hover:text-green-700'}
+                    />
+                    <IconButton
+                      icon={Trash2}
+                      variant="ghost"
+                      size="sm"
+                      tooltip="ลบ"
+                      onClick={() => openDeleteModal(customer)}
+                      className="text-red-600 hover:text-red-700"
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </EnhancedTable>
+        
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ก่อนหน้า
-                </button>
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ถัดไป
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    แสดง <span className="font-medium">{(currentPage - 1) * 10 + 1}</span> ถึง{' '}
-                    <span className="font-medium">{Math.min(currentPage * 10, totalCustomers)}</span> จาก{' '}
-                    <span className="font-medium">{totalCustomers}</span> รายการ
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ก่อนหน้า
-                    </button>
-                    
-                    {[...Array(Math.min(5, totalPages))].map((_, index) => {
-                      const page = index + 1
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === page
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      )
-                    })}
-
-                    <button
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ถัดไป
-                    </button>
-                  </nav>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={totalCustomers}
+            itemsPerPage={10}
+          />
         )}
-      </div>
+      </Card>
 
       {/* Customer Detail Modal */}
       {showCustomerModal && selectedCustomer && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-2xl rounded-md bg-white">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">รายละเอียดลูกค้า</h3>
               <button
@@ -722,8 +707,8 @@ export default function CustomersPage() {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl border">
             <h3 className="text-lg font-medium mb-4">แก้ไขข้อมูลลูกค้า</h3>
             <form onSubmit={async (e) => {
               e.preventDefault()
@@ -834,8 +819,8 @@ export default function CustomersPage() {
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl border">
             <h3 className="text-lg font-medium mb-4">ยืนยันการลบ</h3>
             <p className="text-gray-600 mb-6">
               คุณแน่ใจหรือไม่ที่ต้องการลบลูกค้า "{selectedCustomer ? getFullName(selectedCustomer) : ''}" 

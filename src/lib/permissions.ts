@@ -13,6 +13,55 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   SUPER_ADMIN: 5,
 }
 
+// ข้อความแจ้งเตือนเมื่อไม่มีสิทธิ์
+export const PERMISSION_DENIED_MESSAGES = {
+  PRODUCTS: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูข้อมูลสินค้า',
+    CREATE: 'คุณไม่มีสิทธิ์ในการเพิ่มสินค้าใหม่',
+    UPDATE: 'คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลสินค้า',
+    DELETE: 'คุณไม่มีสิทธิ์ในการลบสินค้า'
+  },
+  ORDERS: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูข้อมูลคำสั่งซื้อ',
+    CREATE: 'คุณไม่มีสิทธิ์ในการสร้างคำสั่งซื้อ',
+    UPDATE: 'คุณไม่มีสิทธิ์ในการแก้ไขคำสั่งซื้อ',
+    DELETE: 'คุณไม่มีสิทธิ์ในการลบคำสั่งซื้อ'
+  },
+  CUSTOMERS: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูข้อมูลลูกค้า',
+    CREATE: 'คุณไม่มีสิทธิ์ในการเพิ่มลูกค้าใหม่',
+    UPDATE: 'คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลลูกค้า',
+    DELETE: 'คุณไม่มีสิทธิ์ในการลบลูกค้า'
+  },
+  USERS: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูข้อมูลผู้ใช้',
+    CREATE: 'คุณไม่มีสิทธิ์ในการสร้างผู้ใช้ใหม่',
+    UPDATE: 'คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลผู้ใช้',
+    DELETE: 'คุณไม่มีสิทธิ์ในการลบผู้ใช้',
+    MANAGE_ROLES: 'คุณไม่มีสิทธิ์ในการจัดการบทบาทผู้ใช้'
+  },
+  MARKETING: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูข้อมูลการตลาด',
+    CREATE: 'คุณไม่มีสิทธิ์ในการสร้างแคมเปญการตลาด',
+    UPDATE: 'คุณไม่มีสิทธิ์ในการแก้ไขแคมเปญการตลาด',
+    DELETE: 'คุณไม่มีสิทธิ์ในการลบแคมเปญการตลาด'
+  },
+  COUPONS: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูคูปอง',
+    CREATE: 'คุณไม่มีสิทธิ์ในการสร้างคูปองใหม่',
+    UPDATE: 'คุณไม่มีสิทธิ์ในการแก้ไขคูปอง',
+    DELETE: 'คุณไม่มีสิทธิ์ในการลบคูปอง'
+  },
+  ANALYTICS: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูรายงานและสถิติ',
+    EXPORT: 'คุณไม่มีสิทธิ์ในการส่งออกรายงาน'
+  },
+  SETTINGS: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูการตั้งค่าระบบ',
+    UPDATE: 'คุณไม่มีสิทธิ์ในการแก้ไขการตั้งค่าระบบ'
+  }
+} as const
+
 // ฟังก์ชันตรวจสอบสิทธิ์ตามบทบาท
 export function hasPermission(
   userRole: UserRole, 
@@ -24,7 +73,7 @@ export function hasPermission(
     return true
   }
 
-  // กำหนดสิทธิ์สำหรับแต่ละบทบาท
+  // กำหนดสิทธิ์สำหรับแต่ละบทบาท - อัปเดตให้ครบถ้วนมากขึ้น
   const rolePermissions: Record<UserRole, string[]> = {
     SUPER_ADMIN: ['*:*'], // สิทธิ์ทุกอย่าง
     
@@ -39,10 +88,17 @@ export function hasPermission(
       'COUPONS:*',
       'CAMPAIGNS:*',
       'ANALYTICS:READ',
+      'ANALYTICS:EXPORT',
       'REPORTS:READ',
+      'REPORTS:EXPORT',
       'SETTINGS:READ',
       'SETTINGS:UPDATE',
-      'AUDIT_LOGS:READ'
+      'AUDIT_LOGS:READ',
+      'USERS:READ',
+      'USERS:CREATE',
+      'USERS:UPDATE',
+      'USERS:DELETE',
+      'INVENTORY:*'
     ],
     
     MANAGER: [
@@ -56,7 +112,9 @@ export function hasPermission(
       'COUPONS:*',
       'CAMPAIGNS:*',
       'ANALYTICS:READ',
-      'REPORTS:READ'
+      'REPORTS:READ',
+      'USERS:READ',
+      'INVENTORY:*'
     ],
     
     STAFF: [
@@ -68,7 +126,11 @@ export function hasPermission(
       'ORDERS:READ',
       'ORDERS:UPDATE',
       'CUSTOMERS:READ',
-      'CUSTOMERS:UPDATE'
+      'CUSTOMERS:UPDATE',
+      'MARKETING:READ',
+      'COUPONS:READ',
+      'INVENTORY:READ',
+      'INVENTORY:UPDATE'
     ],
     
     VIEWER: [
@@ -79,7 +141,8 @@ export function hasPermission(
       'ORDERS:READ',
       'CUSTOMERS:READ',
       'ANALYTICS:READ',
-      'REPORTS:READ'
+      'REPORTS:READ',
+      'INVENTORY:READ'
     ]
   }
 
@@ -102,6 +165,15 @@ export function hasPermission(
   }
   
   return false
+}
+
+// ฟังก์ชันรับข้อความแจ้งเตือน
+export function getPermissionDeniedMessage(resource: string, action: string): string {
+  const resourceMessages = PERMISSION_DENIED_MESSAGES[resource as keyof typeof PERMISSION_DENIED_MESSAGES]
+  if (resourceMessages && resourceMessages[action as keyof typeof resourceMessages]) {
+    return resourceMessages[action as keyof typeof resourceMessages]
+  }
+  return `คุณไม่มีสิทธิ์ในการดำเนินการ ${action} กับ ${resource}`
 }
 
 // Legacy function for backward compatibility

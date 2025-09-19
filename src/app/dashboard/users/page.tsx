@@ -2,6 +2,37 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useToastNotification } from '@/hooks/use-toast-notification'
+import { usePermission } from '@/hooks/use-permission'
+import { PermissionGuard, PermissionButton } from '@/components/permission/PermissionGuard'
+import { Button, IconButton } from '@/components/ui/button'
+import { Card, StatCard } from '@/components/ui/card'
+import { 
+  EnhancedTable, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableRow, 
+  TableCell, 
+  Badge, 
+  Pagination 
+} from '@/components/ui/table'
+import { 
+  Search, 
+  Filter, 
+  Plus, 
+  Eye, 
+  Edit, 
+  Trash2, 
+  User, 
+  Users, 
+  UserCheck, 
+  Shield, 
+  Activity,
+  Calendar,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react'
 
 interface User {
   id: string
@@ -57,6 +88,8 @@ const STATUS_COLORS = {
 
 export default function UsersPage() {
   const { data: session } = useSession()
+  const toast = useToastNotification()
+  const { hasPermission, executeWithPermission } = usePermission()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -111,7 +144,9 @@ export default function UsersPage() {
       setUsers(data.users)
       setPagination(data.pagination)
     } catch (err) {
-      setError('ไม่สามารถโหลดข้อมูลผู้ใช้งานได้')
+      const errorMessage = 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้'
+      setError(errorMessage)
+      toast.showError(errorMessage)
       console.error('Error fetching users:', err)
     } finally {
       setLoading(false)
@@ -129,80 +164,102 @@ export default function UsersPage() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newUser),
-      })
+    
+    await executeWithPermission('USERS', 'CREATE', async () => {
+      try {
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newUser),
+        })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create user')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || errorData.error || 'Failed to create user')
+        }
+
+        const result = await response.json()
+        toast.showSuccess('สร้างผู้ใช้งานใหม่เรียบร้อยแล้ว')
+        
+        setShowCreateModal(false)
+        setNewUser({
+          name: '',
+          email: '',
+          password: '',
+          role: 'VIEWER',
+          status: 'ACTIVE'
+        })
+        fetchUsers()
+      } catch (err: any) {
+        const errorMessage = err.message || 'ไม่สามารถสร้างผู้ใช้งานได้'
+        setError(errorMessage)
+        toast.showError(errorMessage)
       }
-
-      setShowCreateModal(false)
-      setNewUser({
-        name: '',
-        email: '',
-        password: '',
-        role: 'VIEWER',
-        status: 'ACTIVE'
-      })
-      fetchUsers()
-    } catch (err: any) {
-      setError(err.message || 'ไม่สามารถสร้างผู้ใช้งานได้')
-    }
+    })
   }
 
   const handleEditUser = async () => {
-    try {
-      const response = await fetch(`/api/users/${selectedUser?.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editUser),
-      })
+    await executeWithPermission('USERS', 'UPDATE', async () => {
+      try {
+        const response = await fetch(`/api/users/${selectedUser?.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(editUser),
+        })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'เกิดข้อผิดพลาด')
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.message || error.error || 'เกิดข้อผิดพลาด')
+        }
+
+        const result = await response.json()
+        toast.showSuccess('แก้ไขข้อมูลผู้ใช้งานเรียบร้อยแล้ว')
+
+        setShowEditModal(false)
+        setSelectedUser(null)
+        setEditUser({
+          name: '',
+          email: '',
+          role: 'VIEWER',
+          status: 'ACTIVE'
+        })
+        fetchUsers()
+      } catch (err: any) {
+        const errorMessage = err.message || 'ไม่สามารถแก้ไขผู้ใช้งานได้'
+        setError(errorMessage)
+        toast.showError(errorMessage)
       }
-
-      setShowEditModal(false)
-      setSelectedUser(null)
-      setEditUser({
-        name: '',
-        email: '',
-        role: 'VIEWER',
-        status: 'ACTIVE'
-      })
-      fetchUsers()
-    } catch (err: any) {
-      setError(err.message || 'ไม่สามารถแก้ไขผู้ใช้งานได้')
-    }
+    })
   }
 
   const handleDeleteUser = async () => {
-    try {
-      const response = await fetch(`/api/users/${selectedUser?.id}`, {
-        method: 'DELETE',
-      })
+    await executeWithPermission('USERS', 'DELETE', async () => {
+      try {
+        const response = await fetch(`/api/users/${selectedUser?.id}`, {
+          method: 'DELETE',
+        })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'เกิดข้อผิดพลาด')
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.message || error.error || 'เกิดข้อผิดพลาด')
+        }
+
+        const result = await response.json()
+        toast.showSuccess('ลบผู้ใช้งานเรียบร้อยแล้ว')
+
+        setShowDeleteModal(false)
+        setSelectedUser(null)
+        fetchUsers()
+      } catch (err: any) {
+        const errorMessage = err.message || 'ไม่สามารถลบผู้ใช้งานได้'
+        setError(errorMessage)
+        toast.showError(errorMessage)
       }
-
-      setShowDeleteModal(false)
-      setSelectedUser(null)
-      fetchUsers()
-    } catch (err: any) {
-      setError(err.message || 'ไม่สามารถลบผู้ใช้งานได้')
-    }
+    })
   }
 
   const openEditModal = (user: User) => {
@@ -251,41 +308,78 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">การจัดการผู้ใช้งาน</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            จัดการบัญชีผู้ใช้งานและสิทธิ์การเข้าถึง
-          </p>
+    <PermissionGuard resource="USERS" action="READ" showMessage={true}>
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">การจัดการผู้ใช้งาน</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              จัดการบัญชีผู้ใช้งานและสิทธิ์การเข้าถึง
+            </p>
+          </div>
+          <PermissionGuard resource="USERS" action="CREATE">
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              leftIcon={Plus}
+            >
+              เพิ่มผู้ใช้งาน
+            </Button>
+          </PermissionGuard>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          เพิ่มผู้ใช้งาน
-        </button>
-      </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <StatCard
+            title="ผู้ใช้งานทั้งหมด"
+            value={pagination.total.toString()}
+            icon={Users}
+            color="blue"
+          />
+          <StatCard
+            title="ผู้ใช้งานที่ใช้งาน"
+            value={users.filter(u => u.status === 'ACTIVE').length.toString()}
+            icon={UserCheck}
+            color="green"
+          />
+          <StatCard
+            title="ผู้ดูแลระบบ"
+            value={users.filter(u => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN').length.toString()}
+            icon={Shield}
+            color="purple"
+          />
+          <StatCard
+            title="ผู้ใช้งานใหม่"
+            value={users.filter(u => {
+              const createdDate = new Date(u.createdAt)
+              const lastWeek = new Date()
+              lastWeek.setDate(lastWeek.getDate() - 7)
+              return createdDate > lastWeek
+            }).length.toString()}
+            icon={Activity}
+            color="yellow"
+          />
+        </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              ค้นหา
-            </label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ชื่อ หรือ อีเมล"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            />
-          </div>
+      <Card className="mb-6">
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                ค้นหา
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="ชื่อ หรือ อีเมล"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               บทบาท
@@ -293,7 +387,7 @@ export default function UsersPage() {
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">ทั้งหมด</option>
               {Object.entries(ROLE_LABELS).map(([key, label]) => (
@@ -308,7 +402,7 @@ export default function UsersPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">ทั้งหมด</option>
               {Object.entries(STATUS_LABELS).map(([key, label]) => (
@@ -317,20 +411,22 @@ export default function UsersPage() {
             </select>
           </div>
           <div className="flex items-end">
-            <button
+            <Button
+              variant="outline"
+              className="w-full"
               onClick={() => {
                 setSearchTerm('')
                 setFilterRole('')
                 setFilterStatus('')
                 setCurrentPage(1)
               }}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
             >
               ล้างตัวกรอง
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
+        </div>
+      </Card>
 
       {/* Error Alert */}
       {error && (
@@ -355,120 +451,137 @@ export default function UsersPage() {
       )}
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <Card>
+        <div className="p-6 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">
             รายการผู้ใช้งาน ({pagination.total} คน)
           </h3>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ผู้ใช้งาน
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  บทบาท
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  สถานะ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  กิจกรรม
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  เข้าร่วมเมื่อ
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  จัดการ
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
+        <EnhancedTable loading={loading}>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ผู้ใช้งาน</TableHead>
+              <TableHead>บทบาท</TableHead>
+              <TableHead>สถานะ</TableHead>
+              <TableHead>กิจกรรม</TableHead>
+              <TableHead>เข้าร่วมเมื่อ</TableHead>
+              <TableHead className="text-right">จัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 flex-shrink-0">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                    <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
                         {user.name || 'ไม่ระบุชื่อ'}
                       </div>
                       <div className="text-sm text-gray-500">{user.email}</div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${ROLE_COLORS[user.role]}`}>
-                      {ROLE_LABELS[user.role]}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${STATUS_COLORS[user.status]}`}>
-                      {STATUS_LABELS[user.status]}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex space-x-4">
-                      <span>{user._count?.auditLogs || 0} กิจกรรม</span>
-                      <span>{user._count?.createdOrders || 0} คำสั่งซื้อ</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(user.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button 
-                      onClick={() => openEditModal(user)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                    >
-                      แก้ไข
-                    </button>
-                    <button 
-                      onClick={() => openDeleteModal(user)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      ลบ
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? 'error' :
+                      user.role === 'MANAGER' ? 'info' :
+                      user.role === 'STAFF' ? 'success' : 'secondary'
+                    }
+                  >
+                    {ROLE_LABELS[user.role]}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      user.status === 'ACTIVE' ? 'success' :
+                      user.status === 'INACTIVE' ? 'warning' : 'error'
+                    }
+                  >
+                    {STATUS_LABELS[user.status]}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-4 text-sm text-gray-500">
+                    <span>{user._count?.auditLogs || 0} กิจกรรม</span>
+                    <span>{user._count?.createdOrders || 0} คำสั่งซื้อ</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-sm text-gray-500">
+                  {formatDate(user.createdAt)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex justify-end space-x-2">
+                    <PermissionGuard resource="USERS" action="UPDATE">
+                      <IconButton
+                        icon={Edit}
+                        variant="ghost"
+                        size="sm"
+                        tooltip="แก้ไข"
+                        onClick={() => openEditModal(user)}
+                      />
+                    </PermissionGuard>
+                    <PermissionGuard resource="USERS" action="DELETE">
+                      <IconButton
+                        icon={Trash2}
+                        variant="ghost"
+                        size="sm"
+                        tooltip="ลบ"
+                        onClick={() => openDeleteModal(user)}
+                        className="text-red-600 hover:text-red-700"
+                      />
+                    </PermissionGuard>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </EnhancedTable>
+        
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+          <div className="p-4 border-t border-gray-200 flex items-center justify-between">
             <div className="text-sm text-gray-500">
               แสดง {((pagination.page - 1) * pagination.limit) + 1} ถึง {Math.min(pagination.page * pagination.limit, pagination.total)} จาก {pagination.total} รายการ
             </div>
             <div className="flex space-x-2">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={pagination.page === 1}
-                className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
+                <ChevronLeft className="w-4 h-4 mr-1" />
                 ก่อนหน้า
-              </button>
+              </Button>
               <span className="px-3 py-1 text-sm">
                 หน้า {pagination.page} จาก {pagination.totalPages}
               </span>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.totalPages))}
                 disabled={pagination.page === pagination.totalPages}
-                className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 ถัดไป
-              </button>
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Create User Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl border">
             <h3 className="text-lg font-medium text-gray-900 mb-4">เพิ่มผู้ใช้งานใหม่</h3>
             
             <form onSubmit={handleCreateUser} className="space-y-4">
@@ -521,11 +634,23 @@ export default function UsersPage() {
                   value={newUser.role}
                   onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value as any }))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  disabled={!hasPermission('USERS', 'MANAGE_ROLES')}
                 >
-                  {Object.entries(ROLE_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
+                  {Object.entries(ROLE_LABELS).map(([key, label]) => {
+                    // เฉพาะ SUPER_ADMIN เท่านั้นที่สามารถกำหนดบทบาทได้
+                    if (!hasPermission('USERS', 'MANAGE_ROLES') && key !== 'VIEWER') {
+                      return null
+                    }
+                    return (
+                      <option key={key} value={key}>{label}</option>
+                    )
+                  })}
                 </select>
+                {!hasPermission('USERS', 'MANAGE_ROLES') && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    เฉพาะ Super Administrator เท่านั้นที่สามารถกำหนดบทบาทได้
+                  </p>
+                )}
               </div>
               
               <div>
@@ -565,8 +690,8 @@ export default function UsersPage() {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl border">
             <h3 className="text-lg font-medium mb-4">แก้ไขผู้ใช้งาน</h3>
             <form onSubmit={async (e) => {
               e.preventDefault()
@@ -601,11 +726,23 @@ export default function UsersPage() {
                     value={editUser.role}
                     onChange={(e) => setEditUser({...editUser, role: e.target.value as User['role']})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    disabled={!hasPermission('USERS', 'MANAGE_ROLES')}
                   >
-                    {Object.entries(ROLE_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
+                    {Object.entries(ROLE_LABELS).map(([key, label]) => {
+                      // เฉพาะ SUPER_ADMIN เท่านั้นที่สามารถเปลี่ยนบทบาทได้
+                      if (!hasPermission('USERS', 'MANAGE_ROLES') && key !== editUser.role) {
+                        return null
+                      }
+                      return (
+                        <option key={key} value={key}>{label}</option>
+                      )
+                    })}
                   </select>
+                  {!hasPermission('USERS', 'MANAGE_ROLES') && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      เฉพาะ Super Administrator เท่านั้นที่สามารถเปลี่ยนบทบาทได้
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -644,8 +781,8 @@ export default function UsersPage() {
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl border">
             <h3 className="text-lg font-medium mb-4">ยืนยันการลบ</h3>
             <p className="text-gray-600 mb-6">
               คุณแน่ใจหรือไม่ที่ต้องการลบผู้ใช้งาน "{selectedUser?.name}" 
@@ -668,6 +805,7 @@ export default function UsersPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PermissionGuard>
   )
 }

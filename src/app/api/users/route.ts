@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkPermission } from '@/lib/permission-middleware'
 import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // ตรวจสอบสิทธิ์ในการดูข้อมูลผู้ใช้
+    const permissionCheck = await checkPermission('USERS', 'READ')
+    if (!permissionCheck.success) {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: permissionCheck.message 
+        }, 
+        { status: 403 }
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -85,18 +93,31 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Only admin can create users
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // ตรวจสอบสิทธิ์ในการสร้างผู้ใช้
+    const permissionCheck = await checkPermission('USERS', 'CREATE')
+    if (!permissionCheck.success) {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: permissionCheck.message 
+        }, 
+        { status: 403 }
+      )
     }
 
     const body = await request.json()
-    const { name, email, password, role = 'USER' } = body
+    const { name, email, password, role = 'VIEWER' } = body
+
+    // เฉพาะ SUPER_ADMIN เท่านั้นที่สามารถสร้างผู้ใช้ที่มีบทบาทสูงได้
+    if (role !== 'VIEWER' && permissionCheck.userRole !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { 
+          error: 'Forbidden',
+          message: 'เฉพาะ Super Administrator เท่านั้นที่สามารถกำหนดบทบาทพิเศษได้' 
+        }, 
+        { status: 403 }
+      )
+    }
 
     // Validate required fields
     if (!name || !email || !password) {

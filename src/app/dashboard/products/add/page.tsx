@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, X, Plus } from 'lucide-react'
 import Link from 'next/link'
+import { useToastNotification } from '@/hooks/use-toast-notification'
 
 interface Category {
   id: string
@@ -37,6 +38,7 @@ interface ProductFormData {
 export default function AddProductPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const toast = useToastNotification()
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(false)
@@ -71,9 +73,12 @@ export default function AddProductPage() {
       if (response.ok) {
         const data = await response.json()
         setCategories(data.categories)
+      } else {
+        toast.showError('ไม่สามารถโหลดข้อมูลหมวดหมู่ได้')
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
+      toast.showError('เกิดข้อผิดพลาดในการโหลดหมวดหมู่')
     }
   }
 
@@ -83,9 +88,12 @@ export default function AddProductPage() {
       if (response.ok) {
         const data = await response.json()
         setBrands(data.brands)
+      } else {
+        toast.showError('ไม่สามารถโหลดข้อมูลแบรนด์ได้')
       }
     } catch (error) {
       console.error('Error fetching brands:', error)
+      toast.showError('เกิดข้อผิดพลาดในการโหลดแบรนด์')
     }
   }
 
@@ -135,14 +143,19 @@ export default function AddProductPage() {
       })
 
       if (response.ok) {
+        toast.showSuccess('เพิ่มสินค้าใหม่เรียบร้อยแล้ว')
         router.push('/dashboard/products')
       } else {
         const errorData = await response.json()
-        setErrors({ submit: errorData.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' })
+        const errorMessage = errorData.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล'
+        setErrors({ submit: errorMessage })
+        toast.showError(errorMessage)
       }
     } catch (error) {
       console.error('Error creating product:', error)
-      setErrors({ submit: 'เกิดข้อผิดพลาดในการเชื่อมต่อ' })
+      const errorMessage = 'เกิดข้อผิดพลาดในการเชื่อมต่อ'
+      setErrors({ submit: errorMessage })
+      toast.showError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useToastNotification } from '@/hooks/use-toast-notification'
 import { 
   Search, 
   Plus, 
@@ -14,8 +15,22 @@ import {
   Download,
   Upload,
   Package,
-  AlertTriangle
+  AlertTriangle,
+  MoreHorizontal,
+  Star
 } from 'lucide-react'
+import { Button, IconButton } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { 
+  EnhancedTable, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableRow, 
+  TableCell, 
+  Badge, 
+  Pagination 
+} from '@/components/ui/table'
 
 interface Product {
   id: string
@@ -50,12 +65,14 @@ interface ProductsResponse {
 export default function ProductsPage() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
+  const toast = useToastNotification()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false) // true = แก้ไข, false = เพิ่มใหม่
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [editProduct, setEditProduct] = useState({
@@ -94,18 +111,24 @@ export default function ProductsPage() {
         const data: ProductsResponse = await response.json()
         setProducts(data.products)
         setPagination(data.pagination)
+      } else {
+        toast.showError('ไม่สามารถโหลดข้อมูลสินค้าได้')
       }
     } catch (error) {
       console.error('Error fetching products:', error)
+      toast.showError('เกิดข้อผิดพลาดในการโหลดข้อมูล')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleEditProduct = async () => {
+  const handleSaveProduct = async () => {
     try {
-      const response = await fetch(`/api/products/${selectedProduct?.id}`, {
-        method: 'PUT',
+      const url = isEditMode ? `/api/products/${selectedProduct?.id}` : '/api/products'
+      const method = isEditMode ? 'PUT' : 'POST'
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -114,11 +137,15 @@ export default function ProductsPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'เกิดข้อผิดพลาด')
+        throw new Error(error.error || 'เกิดข้อผิดพลาด')
       }
 
+      toast.showSuccess(
+        isEditMode ? 'แก้ไขข้อมูลสินค้าเรียบร้อยแล้ว' : 'เพิ่มสินค้าใหม่เรียบร้อยแล้ว'
+      )
       setShowEditModal(false)
       setSelectedProduct(null)
+      setIsEditMode(false)
       setEditProduct({
         name: '',
         description: '',
@@ -134,7 +161,8 @@ export default function ProductsPage() {
       })
       fetchProducts()
     } catch (err: any) {
-      console.error('Error editing product:', err)
+      console.error('Error saving product:', err)
+      toast.showError(err.message || 'ไม่สามารถบันทึกข้อมูลสินค้าได้')
     }
   }
 
@@ -146,19 +174,22 @@ export default function ProductsPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'เกิดข้อผิดพลาด')
+        throw new Error(error.error || 'เกิดข้อผิดพลาด')
       }
 
+      toast.showSuccess('ลบสินค้าเรียบร้อยแล้ว')
       setShowDeleteModal(false)
       setSelectedProduct(null)
       fetchProducts()
     } catch (err: any) {
       console.error('Error deleting product:', err)
+      toast.showError(err.message || 'ไม่สามารถลบสินค้าได้')
     }
   }
 
   const openEditModal = (product: Product) => {
     setSelectedProduct(product)
+    setIsEditMode(true)
     setEditProduct({
       name: product.name,
       description: product.description,
@@ -211,44 +242,48 @@ export default function ProductsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      ACTIVE: { label: 'เผยแพร่', className: 'bg-green-100 text-green-800' },
-      DRAFT: { label: 'ร่าง', className: 'bg-yellow-100 text-yellow-800' },
-      ARCHIVED: { label: 'ปิดการขาย', className: 'bg-red-100 text-red-800' }
+      ACTIVE: { label: 'เผยแพร่', variant: 'success' as const },
+      DRAFT: { label: 'ร่าง', variant: 'warning' as const },
+      ARCHIVED: { label: 'ปิดการขาย', variant: 'error' as const }
     }
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT
     
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
+      <Badge variant={config.variant}>
         {config.label}
-      </span>
+      </Badge>
     )
   }
 
   const getStockStatus = (quantity: number, trackQuantity: boolean) => {
     if (!trackQuantity) {
-      return <span className="text-gray-500 text-sm">ไม่ติดตาม</span>
+      return <span className="text-slate-500 text-sm font-medium">ไม่ติดตาม</span>
     }
     
     if (quantity === 0) {
       return (
-        <span className="inline-flex items-center text-red-600 text-sm">
-          <AlertTriangle className="w-4 h-4 mr-1" />
+        <Badge variant="error" className="gap-1">
+          <AlertTriangle className="w-3 h-3" />
           หมดสต็อก
-        </span>
+        </Badge>
       )
     }
     
     if (quantity <= 5) {
       return (
-        <span className="inline-flex items-center text-yellow-600 text-sm">
-          <AlertTriangle className="w-4 h-4 mr-1" />
+        <Badge variant="warning" className="gap-1">
+          <AlertTriangle className="w-3 h-3" />
           สต็อกต่ำ ({quantity})
-        </span>
+        </Badge>
       )
     }
     
-    return <span className="text-green-600 text-sm">มีสต็อก ({quantity})</span>
+    return (
+      <Badge variant="success">
+        มีสต็อก ({quantity})
+      </Badge>
+    )
   }
 
   if (loading) {
@@ -271,42 +306,24 @@ export default function ProductsPage() {
             <p className="text-gray-600 mt-1">จัดการและติดตามสินค้าทั้งหมดในระบบ</p>
           </div>
           <div className="flex space-x-3">
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <Button variant="outline" size="sm">
               <Upload className="w-4 h-4 mr-2" />
               นำเข้า
-            </button>
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            </Button>
+            <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
               ส่งออก
-            </button>
-            <button 
-              onClick={() => {
-                setSelectedProduct(null)
-                setEditProduct({
-                  name: '',
-                  description: '',
-                  price: 0,
-                  comparePrice: 0,
-                  sku: '',
-                  barcode: '',
-                  trackQuantity: true,
-                  quantity: 0,
-                  categoryId: '',
-                  brandId: '',
-                  status: 'ACTIVE'
-                })
-                setShowEditModal(true)
-              }}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              เพิ่มสินค้าใหม่
-            </button>
+            </Button>
+            <Link href="/dashboard/products/add">
+              <Button leftIcon={Plus}>
+                เพิ่มสินค้าใหม่
+              </Button>
+            </Link>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow">
+        <Card>
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
@@ -321,137 +338,112 @@ export default function ProductsPage() {
                   />
                 </div>
               </div>
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+              <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
                 ตัวกรอง
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Products Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    สินค้า
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    สถานะ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    สต็อก
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ราคา
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    การจัดการ
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
-                          <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <Package className="h-6 w-6 text-gray-400" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {product.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            SKU: {product.sku}
-                          </div>
+          <EnhancedTable loading={loading}>
+            <TableHeader>
+              <TableRow>
+                <TableHead sortable sortDirection="asc">สินค้า</TableHead>
+                <TableHead>สถานะ</TableHead>
+                <TableHead sortable>สต็อก</TableHead>
+                <TableHead sortable>ราคา</TableHead>
+                <TableHead className="text-right">การจัดการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id} clickable>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-12 w-12">
+                        <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shadow-sm">
+                          <Package className="h-6 w-6 text-slate-500" />
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(product.status)}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStockStatus(product.quantity, product.trackQuantity)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {formatPrice(product.price)}
-                      </div>
-                      {product.comparePrice && product.comparePrice > product.price && (
-                        <div className="text-sm text-gray-500 line-through">
-                          {formatPrice(product.comparePrice)}
+                      <div className="ml-4">
+                        <div className="text-sm font-semibold text-slate-900">
+                          {product.name}
                         </div>
+                        <div className="text-xs text-slate-500 font-mono">
+                          SKU: {product.sku}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {getStatusBadge(product.status)}
+                  </TableCell>
+                  <TableCell>
+                    {getStockStatus(product.quantity, product.trackQuantity)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-semibold text-slate-900">
+                      {formatPrice(product.price)}
+                    </div>
+                    {product.comparePrice && product.comparePrice > product.price && (
+                      <div className="text-xs text-slate-500 line-through">
+                        {formatPrice(product.comparePrice)}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end space-x-1">
+                      <IconButton 
+                        size="sm" 
+                        variant="ghost"
+                        icon={Eye}
+                        className="hover:bg-blue-50 hover:text-blue-600"
+                      />
+                      <IconButton 
+                        size="sm"
+                        variant="ghost"
+                        icon={Edit2}
+                        onClick={() => openEditModal(product)}
+                        className="hover:bg-amber-50 hover:text-amber-600"
+                      />
+                      {session?.user.role === 'ADMIN' && (
+                        <IconButton 
+                          size="sm"
+                          variant="ghost"
+                          icon={Trash2}
+                          onClick={() => openDeleteModal(product)}
+                          className="hover:bg-red-50 hover:text-red-600"
+                        />
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button className="text-gray-400 hover:text-blue-600 p-1">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => openEditModal(product)}
-                          className="text-gray-400 hover:text-blue-600 p-1"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        {session?.user.role === 'ADMIN' && (
-                          <button 
-                            onClick={() => openDeleteModal(product)}
-                            className="text-gray-400 hover:text-red-600 p-1"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </EnhancedTable>
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  แสดง {((pagination.page - 1) * pagination.limit) + 1} ถึง{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.total)} จาก{' '}
-                  {pagination.total} รายการ
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={!pagination.hasPrev}
-                    className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    ก่อนหน้า
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={!pagination.hasNext}
-                    className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    ถัดไป
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={setCurrentPage}
+          />
+        </Card>
       </div>
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-medium mb-4">แก้ไขสินค้า</h3>
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border">
+            <h3 className="text-lg font-medium mb-4">
+              {isEditMode ? 'แก้ไขสินค้า' : 'เพิ่มสินค้าใหม่'}
+            </h3>
             <form onSubmit={async (e) => {
               e.preventDefault()
-              await handleEditProduct()
+              await handleSaveProduct()
             }}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -533,19 +525,20 @@ export default function ProductsPage() {
                 </div>
                 
                 <div className="col-span-2 flex space-x-3 pt-4">
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => setShowEditModal(false)}
-                    className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200"
+                    className="flex-1"
                   >
                     ยกเลิก
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                    className="flex-1"
                   >
-                    บันทึก
-                  </button>
+                    {isEditMode ? 'บันทึกการแก้ไข' : 'เพิ่มสินค้า'}
+                  </Button>
                 </div>
               </div>
             </form>
@@ -555,26 +548,28 @@ export default function ProductsPage() {
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl border">
             <h3 className="text-lg font-medium mb-4">ยืนยันการลบ</h3>
             <p className="text-gray-600 mb-6">
               คุณแน่ใจหรือไม่ที่ต้องการลบสินค้า "{selectedProduct?.name}" 
               การดำเนินการนี้ไม่สามารถย้อนกลับได้
             </p>
             <div className="flex space-x-3">
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200"
+                className="flex-1"
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="destructive"
                 onClick={handleDeleteProduct}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                className="flex-1"
               >
                 ลบ
-              </button>
+              </Button>
             </div>
           </div>
         </div>

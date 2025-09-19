@@ -264,7 +264,12 @@ export default function CampaignsPage() {
     return <div>กำลังโหลด...</div>
   }
 
-  const canManage = ['ADMIN', 'MANAGER'].includes(session.user.role)
+  const canManage = ['ADMIN', 'MANAGER', 'SUPER_ADMIN'].includes(session.user.role)
+  
+  // Debug info
+  console.log('Session:', session)
+  console.log('User role:', session.user.role)
+  console.log('Can manage:', canManage)
 
   return (
     <div className="p-6">
@@ -583,8 +588,8 @@ export default function CampaignsPage() {
 
       {/* Campaign Detail Modal */}
       {showCampaignModal && selectedCampaign && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 shadow-2xl rounded-md bg-white">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">รายละเอียดแคมเปญ</h3>
               <button
@@ -727,8 +732,8 @@ export default function CampaignsPage() {
 
       {/* Create Campaign Modal */}
       {showCreateModal && canManage && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-2xl rounded-md bg-white">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">สร้างแคมเปญใหม่</h3>
               <button
