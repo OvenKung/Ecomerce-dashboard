@@ -51,8 +51,6 @@ export default function MarketingPage() {
     return <div>กำลังโหลด...</div>
   }
 
-  const canManage = ['ADMIN', 'MANAGER'].includes(session.user.role)
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="relative p-4 space-y-6">
@@ -65,98 +63,66 @@ export default function MarketingPage() {
 
         {/* Header */}
         <div className="relative">
-          <Card variant="glass" className="border-white/20 backdrop-blur-sm">
+          <Card variant="glass" className="border-white/20 backdrop-blur-sm bg-gradient-to-r from-white/40 to-blue-50/60">
             <div className="p-6">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                เครื่องมือการตลาด
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                การตลาดและโปรโมชั่น
               </h1>
-              <p className="mt-2 text-slate-600">จัดการแคมเปญ คูปอง และกิจกรรมการตลาดทั้งหมด</p>
             </div>
           </Card>
         </div>
 
-        {/* Quick Stats */}
+        {/* Marketing Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 relative">
           <StatCard
-            title="แคมเปญที่ใช้งาน"
-            value={marketingStats.activeCampaigns.toString()}
-            trend={{
-              value: 15,
-              isPositive: true,
-              period: 'active campaigns'
-            }}
+            title="แคมเปญทำงาน"
+            value={marketingStats.activeCampaigns}
             icon={Target}
-            color="blue"
-            className="animate-slide-in-up"
+            trend={{ value: 12, isPositive: true, period: 'month' }}
+            className="border-white/20 backdrop-blur-sm bg-gradient-to-br from-green-50/80 to-emerald-50/80 animate-slide-in-up"
             style={{ animationDelay: '0.1s' }}
           />
           <StatCard
-            title="คูปองที่ใช้งาน"
-            value={marketingStats.activeCoupons.toString()}
-            trend={{
-              value: 25,
-              isPositive: true,
-              period: 'active coupons'
-            }}
+            title="คูปองทำงาน"
+            value={marketingStats.activeCoupons}
             icon={Gift}
-            color="green"
-            className="animate-slide-in-up"
+            trend={{ value: 8, isPositive: true, period: 'week' }}
+            className="border-white/20 backdrop-blur-sm bg-gradient-to-br from-blue-50/80 to-cyan-50/80 animate-slide-in-up"
             style={{ animationDelay: '0.2s' }}
           />
           <StatCard
-            title="ยอดเข้าถึงรวม"
-            value={marketingStats.totalReach.toLocaleString()}
-            trend={{
-              value: 12,
-              isPositive: true,
-              period: 'total reach'
-            }}
+            title="การเข้าถึง"
+            value={marketingStats.totalReach}
             icon={Users}
-            color="purple"
-            className="animate-slide-in-up"
+            trend={{ value: 15, isPositive: true, period: 'month' }}
+            className="border-white/20 backdrop-blur-sm bg-gradient-to-br from-purple-50/80 to-pink-50/80 animate-slide-in-up"
             style={{ animationDelay: '0.3s' }}
           />
           <StatCard
-            title="อัตราการแปลง"
+            title="อัตราแปลง"
             value={`${marketingStats.conversionRate}%`}
-            trend={{
-              value: 8,
-              isPositive: true,
-              period: 'conversion rate'
-            }}
             icon={TrendingUp}
-            color="red"
-            className="animate-slide-in-up"
+            trend={{ value: 0.8, isPositive: true, period: 'month' }}
+            className="border-white/20 backdrop-blur-sm bg-gradient-to-br from-orange-50/80 to-red-50/80 animate-slide-in-up"
             style={{ animationDelay: '0.4s' }}
           />
           <StatCard
             title="ROAS เฉลี่ย"
             value={`${marketingStats.averageROAS}x`}
-            trend={{
-              value: 18,
-              isPositive: true,
-              period: 'average ROAS'
-            }}
             icon={DollarSign}
-            color="yellow"
-            className="animate-slide-in-up"
+            trend={{ value: 0.3, isPositive: true, period: 'quarter' }}
+            className="border-white/20 backdrop-blur-sm bg-gradient-to-br from-indigo-50/80 to-blue-50/80 animate-slide-in-up"
             style={{ animationDelay: '0.5s' }}
           />
           <StatCard
-            title="ผู้ติดตามอีเมล"
-            value={marketingStats.emailSubscribers.toLocaleString()}
-            trend={{
-              value: 22,
-              isPositive: true,
-              period: 'subscribers'
-            }}
+            title="Email Subscribers"
+            value={marketingStats.emailSubscribers}
             icon={Mail}
-            color="indigo"
-            className="animate-slide-in-up"
+            trend={{ value: 250, isPositive: true, period: 'month' }}
+            className="border-white/20 backdrop-blur-sm bg-gradient-to-br from-teal-50/80 to-green-50/80 animate-slide-in-up"
             style={{ animationDelay: '0.6s' }}
           />
         </div>
-      </div>
 
         {/* Marketing Tools Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
@@ -168,36 +134,33 @@ export default function MarketingPage() {
             style={{ animationDelay: '0.1s' }}
           >
             <div className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center border border-blue-200/50">
-                    <Target className="w-6 h-6 text-blue-600" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+                    <Target className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                      แคมเปญการตลาด
+                    </h3>
+                    <p className="text-sm text-gray-600">จัดการและติดตามแคมเปญ</p>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-slate-500 truncate">
-                      แคมเปญการตลาด
-                    </dt>
-                    <dd className="text-lg font-semibold text-slate-900">
-                      จัดการแคมเปญโปรโมชั่น
-                    </dd>
-                  </dl>
-                </div>
               </div>
-              <div className="mt-4">
-                <p className="text-sm text-slate-600">
-                  สร้างและจัดการแคมเปญการตลาด ติดตามผลการดำเนินงาน และวิเคราะห์ ROI
-                </p>
-              </div>
-              <div className="mt-6">
+              
+              <div className="space-y-3">
                 <Link href="/dashboard/marketing/campaigns">
                   <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transition-all duration-300 rounded-xl"
+                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl px-4 py-3 font-medium transition-all duration-300"
                   >
                     จัดการแคมเปญ
+                  </Button>
+                </Link>
+                <Link href="/dashboard/marketing/campaigns/create">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200 text-slate-700 hover:from-slate-100 hover:to-gray-100 hover:border-slate-300 rounded-xl px-4 py-3 font-medium transition-all duration-300"
+                  >
+                    สร้างแคมเปญใหม่
                   </Button>
                 </Link>
               </div>
@@ -211,36 +174,33 @@ export default function MarketingPage() {
             style={{ animationDelay: '0.2s' }}
           >
             <div className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl flex items-center justify-center border border-green-200/50">
-                    <Gift className="w-6 h-6 text-green-600" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                    <Gift className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-green-900 to-emerald-900 bg-clip-text text-transparent">
+                      คูปองส่วนลด
+                    </h3>
+                    <p className="text-sm text-gray-600">สร้างและจัดการคูปอง</p>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-slate-500 truncate">
-                      คูปองส่วนลด
-                    </dt>
-                    <dd className="text-lg font-semibold text-slate-900">
-                      จัดการโค้ดส่วนลด
-                    </dd>
-                  </dl>
-                </div>
               </div>
-              <div className="mt-4">
-                <p className="text-sm text-slate-600">
-                  สร้างและจัดการคูปองส่วนลด ติดตามการใช้งาน และวิเคราะห์ประสิทธิภาพ
-                </p>
-              </div>
-              <div className="mt-6">
+              
+              <div className="space-y-3">
                 <Link href="/dashboard/marketing/coupons">
                   <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 transition-all duration-300 rounded-xl"
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl px-4 py-3 font-medium transition-all duration-300"
                   >
                     จัดการคูปอง
+                  </Button>
+                </Link>
+                <Link href="/dashboard/marketing/coupons/create">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200 text-slate-700 hover:from-slate-100 hover:to-gray-100 hover:border-slate-300 rounded-xl px-4 py-3 font-medium transition-all duration-300"
+                  >
+                    สร้างคูปองใหม่
                   </Button>
                 </Link>
               </div>
@@ -254,79 +214,35 @@ export default function MarketingPage() {
             style={{ animationDelay: '0.3s' }}
           >
             <div className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-violet-100 rounded-xl flex items-center justify-center border border-purple-200/50">
-                    <Mail className="w-6 h-6 text-purple-600" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg">
+                    <Mail className="h-6 w-6 text-white" />
                   </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-slate-500 truncate">
+                  <div>
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-900 to-pink-900 bg-clip-text text-transparent">
                       Email Marketing
-                    </dt>
-                    <dd className="text-lg font-semibold text-slate-900">
-                      จัดการอีเมลการตลาด
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-sm text-slate-600">
-                  สร้างและส่งอีเมลการตลาด จัดการรายชื่อลูกค้า และติดตามอัตราเปิดอ่าน
-                </p>
-              </div>
-              <div className="mt-6">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  disabled
-                  className="w-full bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 text-purple-700 opacity-60 rounded-xl"
-                >
-                  เร็วๆ นี้
-                </Button>
-              </div>
-            </div>
-          </Card>
-
-          {/* Social Media */}
-          <Card 
-            variant="glass" 
-            className="border-white/20 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:scale-105 animate-slide-in-up"
-            style={{ animationDelay: '0.4s' }}
-          >
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-rose-100 rounded-xl flex items-center justify-center border border-pink-200/50">
-                    <Users className="w-6 h-6 text-pink-600" />
+                    </h3>
+                    <p className="text-sm text-gray-600">ส่งอีเมลและจดหมายข่าว</p>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-slate-500 truncate">
-                      Social Media
-                    </dt>
-                    <dd className="text-lg font-semibold text-slate-900">
-                      จัดการโซเชียลมีเดีย
-                    </dd>
-                  </dl>
-                </div>
               </div>
-              <div className="mt-4">
-                <p className="text-sm text-slate-600">
-                  จัดการเนื้อหาโซเชียลมีเดีย กำหนดเวลาโพสต์ และติดตามการมีส่วนร่วม
-                </p>
-              </div>
-              <div className="mt-6">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  disabled
-                  className="w-full bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200 text-pink-700 opacity-60 rounded-xl"
-                >
-                  เร็วๆ นี้
-                </Button>
+              
+              <div className="space-y-3">
+                <Link href="/dashboard/marketing/emails">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl px-4 py-3 font-medium transition-all duration-300"
+                  >
+                    จัดการอีเมล
+                  </Button>
+                </Link>
+                <Link href="/dashboard/marketing/subscribers">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200 text-slate-700 hover:from-slate-100 hover:to-gray-100 hover:border-slate-300 rounded-xl px-4 py-3 font-medium transition-all duration-300"
+                  >
+                    ผู้ติดตาม
+                  </Button>
+                </Link>
               </div>
             </div>
           </Card>
@@ -335,39 +251,36 @@ export default function MarketingPage() {
           <Card 
             variant="glass" 
             className="border-white/20 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:scale-105 animate-slide-in-up"
-            style={{ animationDelay: '0.5s' }}
+            style={{ animationDelay: '0.4s' }}
           >
             <div className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-xl flex items-center justify-center border border-indigo-200/50">
-                    <BarChart3 className="w-6 h-6 text-indigo-600" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-orange-900 to-red-900 bg-clip-text text-transparent">
+                      การวิเคราะห์
+                    </h3>
+                    <p className="text-sm text-gray-600">รายงานและสถิติการตลาด</p>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-slate-500 truncate">
-                      การวิเคราะห์การตลาด
-                    </dt>
-                    <dd className="text-lg font-semibold text-slate-900">
-                      รายงานและวิเคราะห์
-                    </dd>
-                  </dl>
-                </div>
               </div>
-              <div className="mt-4">
-                <p className="text-sm text-slate-600">
-                  วิเคราะห์ประสิทธิภาพการตลาด ติดตาม ROI และสร้างรายงานแคมเปญ
-                </p>
-              </div>
-              <div className="mt-6">
-                <Link href="/dashboard/analytics">
+              
+              <div className="space-y-3">
+                <Link href="/dashboard/marketing/analytics">
                   <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-200 text-indigo-700 hover:from-indigo-100 hover:to-blue-100 hover:border-indigo-300 transition-all duration-300 rounded-xl"
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-xl px-4 py-3 font-medium transition-all duration-300"
                   >
                     ดูรายงาน
+                  </Button>
+                </Link>
+                <Link href="/dashboard/marketing/performance">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200 text-slate-700 hover:from-slate-100 hover:to-gray-100 hover:border-slate-300 rounded-xl px-4 py-3 font-medium transition-all duration-300"
+                  >
+                    ประสิทธิภาพ
                   </Button>
                 </Link>
               </div>
@@ -378,75 +291,73 @@ export default function MarketingPage() {
           <Card 
             variant="glass" 
             className="border-white/20 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:scale-105 animate-slide-in-up"
-            style={{ animationDelay: '0.6s' }}
+            style={{ animationDelay: '0.5s' }}
           >
             <div className="p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-xl flex items-center justify-center border border-yellow-200/50">
-                    <Users className="w-6 h-6 text-yellow-600" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-indigo-900 to-blue-900 bg-clip-text text-transparent">
+                      การแบ่งกลุ่มลูกค้า
+                    </h3>
+                    <p className="text-sm text-gray-600">จัดกลุ่มและกำหนดเป้าหมาย</p>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-slate-500 truncate">
-                      การแบ่งกลุ่มลูกค้า
-                    </dt>
-                    <dd className="text-lg font-semibold text-slate-900">
-                      จัดกลุ่มเป้าหมาย
-                    </dd>
-                  </dl>
-                </div>
               </div>
-              <div className="mt-4">
-                <p className="text-sm text-slate-600">
-                  แบ่งกลุ่มลูกค้าตามพฤติกรรม ความสนใจ และข้อมูลประชากรศาสตร์
-                </p>
-              </div>
-              <div className="mt-6">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  disabled
-                  className="w-full bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 opacity-60 rounded-xl"
-                >
-                  เร็วๆ นี้
-                </Button>
+              
+              <div className="space-y-3">
+                <Link href="/dashboard/marketing/segments">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white rounded-xl px-4 py-3 font-medium transition-all duration-300"
+                  >
+                    จัดการกลุ่ม
+                  </Button>
+                </Link>
+                <Link href="/dashboard/marketing/targeting">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200 text-slate-700 hover:from-slate-100 hover:to-gray-100 hover:border-slate-300 rounded-xl px-4 py-3 font-medium transition-all duration-300"
+                  >
+                    กำหนดเป้าหมาย
+                  </Button>
+                </Link>
               </div>
             </div>
           </Card>
 
-        </div>
-
-        {/* Quick Actions */}
-        {canManage && (
-          <Card variant="glass" className="border-white/20 backdrop-blur-sm animate-slide-in-up" style={{ animationDelay: '0.7s' }}>
+          {/* Customer Analysis */}
+          <Card 
+            variant="glass" 
+            className="border-white/20 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:scale-105 animate-slide-in-up"
+            style={{ animationDelay: '0.6s' }}
+          >
             <div className="p-6">
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-slate-900 to-blue-900 bg-clip-text text-transparent mb-6">
-                การดำเนินการด่วน
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Link href="/dashboard/marketing/campaigns">
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 rounded-xl px-4 py-3 font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
-                    สร้างแคมเปญใหม่
-                  </Button>
-                </Link>
-                <Link href="/dashboard/marketing/coupons">
-                  <Button className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-0 rounded-xl px-4 py-3 font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
-                    สร้างคูปองใหม่
-                  </Button>
-                </Link>
-                <Link href="/dashboard/analytics">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-teal-500 to-green-600 rounded-lg">
+                    <Eye className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-teal-900 to-green-900 bg-clip-text text-transparent">
+                      วิเคราะห์ลูกค้า
+                    </h3>
+                    <p className="text-sm text-gray-600">พฤติกรรมและแนวโน้ม</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <Link href="/dashboard/marketing/customer-insights">
                   <Button 
-                    variant="outline"
-                    className="w-full bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200 text-slate-700 hover:from-slate-100 hover:to-gray-100 hover:border-slate-300 rounded-xl px-4 py-3 font-medium transition-all duration-300"
+                    className="w-full bg-gradient-to-r from-teal-500 to-green-600 hover:from-teal-600 hover:to-green-700 text-white rounded-xl px-4 py-3 font-medium transition-all duration-300"
                   >
-                    ดูรายงานการตลาด
+                    ข้อมูลเชิงลึก
                   </Button>
                 </Link>
-                <Link href="/dashboard/customers">
+                <Link href="/dashboard/marketing/behavior">
                   <Button 
-                    variant="outline"
                     className="w-full bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200 text-slate-700 hover:from-slate-100 hover:to-gray-100 hover:border-slate-300 rounded-xl px-4 py-3 font-medium transition-all duration-300"
                   >
                     วิเคราะห์ลูกค้า
@@ -455,7 +366,7 @@ export default function MarketingPage() {
               </div>
             </div>
           </Card>
-        )}
+        </div>
 
         {/* Tips & Best Practices */}
         <Card variant="glass" className="border-white/20 backdrop-blur-sm bg-gradient-to-br from-blue-50/80 to-indigo-50/80 animate-slide-in-up" style={{ animationDelay: '0.8s' }}>
@@ -513,8 +424,8 @@ export default function MarketingPage() {
                 </ul>
               </div>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
       </div>
     </div>
   )
