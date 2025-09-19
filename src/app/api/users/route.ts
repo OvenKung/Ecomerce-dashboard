@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const search = searchParams.get('search') || ''
     const role = searchParams.get('role') || ''
+    const status = searchParams.get('status') || ''
 
     const skip = (page - 1) * limit
 
@@ -41,6 +42,10 @@ export async function GET(request: NextRequest) {
       where.role = role
     }
 
+    if (status) {
+      where.status = status
+    }
+
     // Execute queries
     const [users, total] = await Promise.all([
       prisma.user.findMany({
@@ -53,6 +58,8 @@ export async function GET(request: NextRequest) {
           name: true,
           email: true,
           role: true,
+          status: true,
+          lastLoginAt: true,
           image: true,
           emailVerified: true,
           createdAt: true,

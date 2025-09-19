@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useToastNotification } from '@/hooks/use-toast-notification'
 import { usePermission } from '@/hooks/use-permission'
@@ -309,274 +309,304 @@ export default function UsersPage() {
 
   return (
     <PermissionGuard resource="USERS" action="READ" showMessage={true}>
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">การจัดการผู้ใช้งาน</h1>
-            <p className="text-sm text-gray-500 mt-1">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+              การจัดการผู้ใช้งาน 👥
+            </h1>
+            <p className="text-base sm:text-lg text-slate-600 font-medium max-w-2xl mx-auto">
               จัดการบัญชีผู้ใช้งานและสิทธิ์การเข้าถึง
             </p>
+            <div className="mt-4 w-16 sm:w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full"></div>
           </div>
-          <PermissionGuard resource="USERS" action="CREATE">
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              leftIcon={Plus}
-            >
-              เพิ่มผู้ใช้งาน
-            </Button>
-          </PermissionGuard>
-        </div>
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <StatCard
-            title="ผู้ใช้งานทั้งหมด"
-            value={pagination.total.toString()}
-            icon={Users}
-            color="blue"
-          />
-          <StatCard
-            title="ผู้ใช้งานที่ใช้งาน"
-            value={users.filter(u => u.status === 'ACTIVE').length.toString()}
-            icon={UserCheck}
-            color="green"
-          />
-          <StatCard
-            title="ผู้ดูแลระบบ"
-            value={users.filter(u => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN').length.toString()}
-            icon={Shield}
-            color="purple"
-          />
-          <StatCard
-            title="ผู้ใช้งานใหม่"
-            value={users.filter(u => {
-              const createdDate = new Date(u.createdAt)
-              const lastWeek = new Date()
-              lastWeek.setDate(lastWeek.getDate() - 7)
-              return createdDate > lastWeek
-            }).length.toString()}
-            icon={Activity}
-            color="yellow"
-          />
-        </div>
+          {/* Action Button */}
+          <div className="flex justify-center">
+            <PermissionGuard resource="USERS" action="CREATE">
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                leftIcon={Plus}
+                variant="default"
+                size="lg"
+                className="shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                เพิ่มผู้ใช้งาน
+              </Button>
+            </PermissionGuard>
+          </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                ค้นหา
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="ชื่อ หรือ อีเมล"
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <StatCard
+              title="ผู้ใช้งานทั้งหมด"
+              value={pagination.total.toString()}
+              trend={{
+                value: users.filter(u => {
+                  const createdDate = new Date(u.createdAt)
+                  const lastMonth = new Date()
+                  lastMonth.setMonth(lastMonth.getMonth() - 1)
+                  return createdDate > lastMonth
+                }).length,
+                isPositive: true,
+                period: 'vs last month'
+              }}
+              icon={Users}
+              color="blue"
+              className="animate-slide-in-up"
+              style={{ animationDelay: '0.1s' }}
+            />
+            <StatCard
+              title="ผู้ใช้งานที่ใช้งาน"
+              value={users.filter(u => u.status === 'ACTIVE').length.toString()}
+              trend={{
+                value: Math.round((users.filter(u => u.status === 'ACTIVE').length / pagination.total) * 100),
+                isPositive: true,
+                period: 'active rate'
+              }}
+              icon={UserCheck}
+              color="green"
+              className="animate-slide-in-up"
+              style={{ animationDelay: '0.2s' }}
+            />
+            <StatCard
+              title="ผู้ดูแลระบบ"
+              value={users.filter(u => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN').length.toString()}
+              trend={{
+                value: Math.round((users.filter(u => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN').length / pagination.total) * 100),
+                isPositive: true,
+                period: 'admin ratio'
+              }}
+              icon={Shield}
+              color="purple"
+              className="animate-slide-in-up"
+              style={{ animationDelay: '0.3s' }}
+            />
+            <StatCard
+              title="ผู้ใช้งานใหม่"
+              value={users.filter(u => {
+                const createdDate = new Date(u.createdAt)
+                const lastWeek = new Date()
+                lastWeek.setDate(lastWeek.getDate() - 7)
+                return createdDate > lastWeek
+              }).length.toString()}
+              trend={{
+                value: 15,
+                isPositive: true,
+                period: 'this week'
+              }}
+              icon={Activity}
+              color="red"
+              className="animate-slide-in-up"
+              style={{ animationDelay: '0.4s' }}
+            />
+          </div>
+
+          {/* Filters */}
+          <Card variant="glass" className="overflow-hidden">
+            <div className="px-6 py-6 sm:px-8 sm:py-8">
+              <div className="flex items-center mb-4 sm:mb-6">
+                <div className="w-2 h-6 sm:h-8 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full mr-3 sm:mr-4"></div>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
+                  ตัวกรองข้อมูล 🔍
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    ค้นหา
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="ชื่อ หรือ อีเมล"
+                      className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl text-sm bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    บทบาท
+                  </label>
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                  >
+                    <option value="">ทั้งหมด</option>
+                    {Object.entries(ROLE_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    สถานะ
+                  </label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                  >
+                    <option value="">ทั้งหมด</option>
+                    {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl border-slate-200 hover:bg-slate-50 transition-all duration-300"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setFilterRole('')
+                      setFilterStatus('')
+                      setCurrentPage(1)
+                    }}
+                  >
+                    ล้างตัวกรอง
+                  </Button>
+                </div>
               </div>
             </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              บทบาท
-            </label>
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">ทั้งหมด</option>
-              {Object.entries(ROLE_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              สถานะ
-            </label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">ทั้งหมด</option>
-              {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setSearchTerm('')
-                setFilterRole('')
-                setFilterStatus('')
-                setCurrentPage(1)
-              }}
-            >
-              ล้างตัวกรอง
-            </Button>
-          </div>
-        </div>
-        </div>
-      </Card>
+          </Card>
 
-      {/* Error Alert */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <div className="flex">
-            <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-            <button
-              onClick={() => setError('')}
-              className="ml-auto text-red-400 hover:text-red-600"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+          {/* Error Alert */}
+          {error && (
+            <Card variant="glass" className="border-red-200 bg-red-50/80 backdrop-blur-sm">
+              <div className="px-6 py-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <p className="text-sm font-medium text-red-800">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError('')}
+                    className="ml-4 text-red-400 hover:text-red-600 transition-colors duration-200"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </Card>
+          )}
 
-      {/* Users Table */}
-      <Card>
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">
-            รายการผู้ใช้งาน ({pagination.total} คน)
-          </h3>
+          {/* Users Table */}
+          <Card variant="glass" className="overflow-hidden">
+            <div className="px-6 py-6 sm:px-8 sm:py-8 border-b border-slate-200/60">
+              <div className="flex items-center">
+                <div className="w-2 h-6 sm:h-8 bg-gradient-to-b from-emerald-500 to-green-600 rounded-full mr-3 sm:mr-4"></div>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
+                  รายการผู้ใช้งาน ({pagination.total} คน) 👥
+                </h3>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-slate-50/90 via-white/90 to-slate-50/90 backdrop-blur-sm">
+              <EnhancedTable loading={loading}>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-slate-700 font-semibold">ผู้ใช้งาน</TableHead>
+                    <TableHead className="text-slate-700 font-semibold">บทบาท</TableHead>
+                    <TableHead className="text-slate-700 font-semibold">สถานะ</TableHead>
+                    <TableHead className="text-slate-700 font-semibold">กิจกรรม</TableHead>
+                    <TableHead className="text-slate-700 font-semibold">เข้าร่วมเมื่อ</TableHead>
+                    <TableHead className="text-right text-slate-700 font-semibold">จัดการ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-slate-50/50 transition-colors duration-200">
+                      <TableCell>
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 flex-shrink-0">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg">
+                              <span className="text-white font-semibold text-sm">
+                                {user.name?.charAt(0)?.toUpperCase() || '?'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-slate-900">
+                              {user.name || 'ไม่ระบุชื่อ'}
+                            </div>
+                            <div className="text-sm text-slate-500">{user.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? 'error' :
+                            user.role === 'MANAGER' ? 'info' :
+                            user.role === 'STAFF' ? 'success' : 'secondary'
+                          }
+                          className="shadow-sm"
+                        >
+                          {user.role === 'SUPER_ADMIN' ? '👑 Super Admin' :
+                           user.role === 'ADMIN' ? '🛡️ Admin' :
+                           user.role === 'MANAGER' ? '💼 Manager' :
+                           user.role === 'STAFF' ? '👤 Staff' : '👁️ Viewer'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={user.status === 'ACTIVE' ? 'success' : 'error'}
+                          className="shadow-sm"
+                        >
+                          {user.status === 'ACTIVE' ? '✅ ใช้งานได้' : '❌ ปิดใช้งาน'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-slate-600">
+                          กิจกรรมล่าสุด
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-slate-600">
+                          {formatDate(user.createdAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
+                            onClick={() => openEditModal(user)}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            แก้ไข
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200"
+                            onClick={() => openDeleteModal(user)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            ลบ
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </EnhancedTable>
+            </div>
+          </Card>
         </div>
-        
-        <EnhancedTable loading={loading}>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ผู้ใช้งาน</TableHead>
-              <TableHead>บทบาท</TableHead>
-              <TableHead>สถานะ</TableHead>
-              <TableHead>กิจกรรม</TableHead>
-              <TableHead>เข้าร่วมเมื่อ</TableHead>
-              <TableHead className="text-right">จัดการ</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-                        <User className="h-5 w-5 text-white" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {user.name || 'ไม่ระบุชื่อ'}
-                      </div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? 'error' :
-                      user.role === 'MANAGER' ? 'info' :
-                      user.role === 'STAFF' ? 'success' : 'secondary'
-                    }
-                  >
-                    {ROLE_LABELS[user.role]}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      user.status === 'ACTIVE' ? 'success' :
-                      user.status === 'INACTIVE' ? 'warning' : 'error'
-                    }
-                  >
-                    {STATUS_LABELS[user.status]}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-4 text-sm text-gray-500">
-                    <span>{user._count?.auditLogs || 0} กิจกรรม</span>
-                    <span>{user._count?.createdOrders || 0} คำสั่งซื้อ</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-gray-500">
-                  {formatDate(user.createdAt)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end space-x-2">
-                    <PermissionGuard resource="USERS" action="UPDATE">
-                      <IconButton
-                        icon={Edit}
-                        variant="ghost"
-                        size="sm"
-                        tooltip="แก้ไข"
-                        onClick={() => openEditModal(user)}
-                      />
-                    </PermissionGuard>
-                    <PermissionGuard resource="USERS" action="DELETE">
-                      <IconButton
-                        icon={Trash2}
-                        variant="ghost"
-                        size="sm"
-                        tooltip="ลบ"
-                        onClick={() => openDeleteModal(user)}
-                        className="text-red-600 hover:text-red-700"
-                      />
-                    </PermissionGuard>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </EnhancedTable>
-        
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="p-4 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              แสดง {((pagination.page - 1) * pagination.limit) + 1} ถึง {Math.min(pagination.page * pagination.limit, pagination.total)} จาก {pagination.total} รายการ
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={pagination.page === 1}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                ก่อนหน้า
-              </Button>
-              <span className="px-3 py-1 text-sm">
-                หน้า {pagination.page} จาก {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.totalPages))}
-                disabled={pagination.page === pagination.totalPages}
-              >
-                ถัดไป
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
+      </div>
 
       {/* Create User Modal */}
       {showCreateModal && (
@@ -805,7 +835,6 @@ export default function UsersPage() {
           </div>
         </div>
       )}
-      </div>
     </PermissionGuard>
   )
 }
