@@ -73,7 +73,7 @@ async function getOverviewAnalytics(period: string = '12months') {
     }
   });
 
-  const totalRevenue = orderStats._sum.totalAmount || 0;
+  const totalRevenue = Number(orderStats._sum.totalAmount || 0);
   const totalOrders = orderStats._count || 0;
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
   const conversionRate = totalCustomers > 0 ? (totalOrders / totalCustomers) * 100 : 0;
@@ -107,7 +107,7 @@ async function getSalesChart(period: string = '12months') {
 
     const monthStats = await prisma.order.aggregate({
       _sum: {
-        total: true
+        totalAmount: true
       },
       _count: true,
       where: {
@@ -121,7 +121,7 @@ async function getSalesChart(period: string = '12months') {
       }
     });
 
-    salesData.push(Number(monthStats._sum.total || 0));
+    salesData.push(Number(monthStats._sum.totalAmount || 0));
     ordersData.push(monthStats._count || 0);
   }
 
@@ -137,11 +137,11 @@ async function getTopProducts(limit: number = 5) {
     by: ['productId'],
     _sum: {
       quantity: true,
-      subtotal: true
+      totalAmount: true
     },
     orderBy: {
       _sum: {
-        subtotal: 'desc'
+        totalAmount: 'desc'
       }
     },
     take: limit
@@ -160,7 +160,7 @@ async function getTopProducts(limit: number = 5) {
         id: item.productId,
         name: product?.name || 'Unknown Product',
         category: product?.category?.name || 'Unknown Category',
-        revenue: Number(item._sum.subtotal || 0),
+        revenue: Number(item._sum.totalAmount || 0),
         units: Number(item._sum.quantity || 0),
         growth: 15.5 // TODO: Calculate actual growth
       };
@@ -174,7 +174,7 @@ async function getTopCategories() {
   const categoryStats = await prisma.orderItem.groupBy({
     by: ['productId'],
     _sum: {
-      subtotal: true
+      totalAmount: true
     }
   });
 
@@ -188,7 +188,7 @@ async function getTopCategories() {
     });
 
     const categoryName = product?.category?.name || 'Unknown';
-    const revenue = Number(item._sum.subtotal || 0);
+    const revenue = Number(item._sum.totalAmount || 0);
     
     categoryRevenue.set(categoryName, (categoryRevenue.get(categoryName) || 0) + revenue);
     totalRevenue += revenue;
@@ -212,7 +212,7 @@ async function getCustomerSegments() {
     by: ['customerId'],
     _count: true,
     _sum: {
-      total: true
+      totalAmount: true
     }
   });
 
@@ -224,19 +224,19 @@ async function getCustomerSegments() {
     {
       segment: 'ลูกค้า VIP',
       count: vipCustomers.length,
-      revenue: vipCustomers.reduce((sum, c) => sum + Number(c._sum.total || 0), 0),
+      revenue: vipCustomers.reduce((sum, c) => sum + Number(c._sum.totalAmount || 0), 0),
       percentage: 40.0 // TODO: Calculate actual percentage
     },
     {
       segment: 'ลูกค้าประจำ',
       count: regularCustomers.length,
-      revenue: regularCustomers.reduce((sum, c) => sum + Number(c._sum.total || 0), 0),
+      revenue: regularCustomers.reduce((sum, c) => sum + Number(c._sum.totalAmount || 0), 0),
       percentage: 34.7 // TODO: Calculate actual percentage
     },
     {
       segment: 'ลูกค้าใหม่',
       count: newCustomers.length,
-      revenue: newCustomers.reduce((sum, c) => sum + Number(c._sum.total || 0), 0),
+      revenue: newCustomers.reduce((sum, c) => sum + Number(c._sum.totalAmount || 0), 0),
       percentage: 25.3 // TODO: Calculate actual percentage
     }
   ];
@@ -245,9 +245,10 @@ async function getCustomerSegments() {
 async function getInventoryStats() {
   const totalProducts = await prisma.product.count();
   
+  // Low stock products
   const lowStock = await prisma.product.count({
     where: {
-      stock: {
+      quantity: {
         lte: 10,
         gt: 0
       }
@@ -256,7 +257,7 @@ async function getInventoryStats() {
 
   const outOfStock = await prisma.product.count({
     where: {
-      stock: {
+      quantity: {
         lte: 0
       }
     }

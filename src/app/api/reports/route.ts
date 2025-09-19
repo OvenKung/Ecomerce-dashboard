@@ -41,7 +41,7 @@ const generateSalesReport = async (startDate: Date, endDate: Date) => {
       }
     },
     include: {
-      orderItems: true,
+      items: true,
       customer: true
     }
   })
@@ -62,10 +62,10 @@ const generateSalesReport = async (startDate: Date, endDate: Date) => {
       }
     }
     
-    dailyData[date].revenue += order.total
+    dailyData[date].revenue += order.totalAmount
     dailyData[date].orders += 1
     dailyData[date].customers.add(order.customerId)
-    dailyData[date].orderValues.push(order.total)
+    dailyData[date].orderValues.push(order.totalAmount)
   })
 
   // Convert to array and calculate metrics
@@ -95,12 +95,6 @@ const generateInventoryReport = async () => {
     include: {
       category: true,
       brand: true,
-      inventoryLogs: {
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: 1
-      },
       orderItems: {
         where: {
           order: {
@@ -115,12 +109,12 @@ const generateInventoryReport = async () => {
 
   const inventoryData = products.map(product => {
     const totalSold = product.orderItems.reduce((sum, item) => sum + item.quantity, 0)
-    const turnoverRate = product.stock > 0 ? (totalSold / product.stock) * 12 : 0 // Annualized
+    const turnoverRate = product.quantity > 0 ? (totalSold / product.quantity) * 12 : 0 // Annualized
     const daysOnHand = turnoverRate > 0 ? Math.floor(365 / turnoverRate) : 0
     
     let status = 'IN_STOCK'
-    if (product.stock === 0) status = 'OUT_OF_STOCK'
-    else if (product.stock <= (product.reorderLevel || 10)) status = 'LOW_STOCK'
+    if (product.quantity === 0) status = 'OUT_OF_STOCK'
+    else if (product.quantity <= (product.lowStockThreshold || 10)) status = 'LOW_STOCK'
     
     return {
       id: product.id,
@@ -128,13 +122,13 @@ const generateInventoryReport = async () => {
       sku: product.sku,
       category: product.category?.name || 'Uncategorized',
       brand: product.brand?.name || 'No Brand',
-      currentStock: product.stock,
-      reservedStock: Math.floor(product.stock * 0.1), // Mock reserved stock
-      availableStock: Math.floor(product.stock * 0.9),
-      reorderLevel: product.reorderLevel || 10,
+      currentStock: product.quantity,
+      reservedStock: Math.floor(product.quantity * 0.1), // Mock reserved stock
+      availableStock: Math.floor(product.quantity * 0.9),
+      reorderLevel: product.lowStockThreshold || 10,
       status,
-      cost: product.price * 0.7, // Estimate cost as 70% of selling price
-      value: product.stock * product.price,
+      cost: Number(product.price) * 0.7, // Estimate cost as 70% of selling price
+      value: product.quantity * Number(product.price),
       turnoverRate: Number(turnoverRate.toFixed(1)),
       daysOnHand
     }
@@ -149,7 +143,7 @@ const generateCustomerReport = async () => {
       orders: {
         where: {
           status: {
-            in: ['COMPLETED', 'DELIVERED']
+            in: ['COMPLETED']
           }
         },
         orderBy: {
@@ -160,7 +154,7 @@ const generateCustomerReport = async () => {
   })
 
   const customerData = customers.map(customer => {
-    const totalSpent = customer.orders.reduce((sum, order) => sum + order.total, 0)
+    const totalSpent = customer.orders.reduce((sum: number, order: any) => sum + Number(order.totalAmount), 0)
     const totalOrders = customer.orders.length
     const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0
     
@@ -174,7 +168,7 @@ const generateCustomerReport = async () => {
     
     return {
       id: customer.id,
-      name: customer.name,
+      name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || customer.email,
       email: customer.email,
       segment,
       registrationDate: customer.createdAt.toISOString().split('T')[0],
@@ -198,24 +192,17 @@ const generateProductPerformanceReport = async () => {
       brand: true,
       orderItems: {
         include: {
-          order: {
-            where: {
-              status: {
-                in: ['COMPLETED', 'DELIVERED']
-              }
-            }
-          }
+          order: true
         }
-      },
-      reviews: true
+      }
     }
   })
 
   const performanceData = products
     .filter(product => product.orderItems.length > 0)
     .map(product => {
-      const unitsSold = product.orderItems.reduce((sum, item) => sum + item.quantity, 0)
-      const revenue = product.orderItems.reduce((sum, item) => sum + (item.quantity * item.price), 0)
+      const unitsSold = product.orderItems.reduce((sum: number, item: any) => sum + item.quantity, 0)
+      const revenue = product.orderItems.reduce((sum: number, item: any) => sum + (item.quantity * Number(item.price)), 0)
       const grossProfit = revenue * 0.3 // Estimate 30% margin
       const marginPercent = 30
       
@@ -223,9 +210,7 @@ const generateProductPerformanceReport = async () => {
       const views = unitsSold * (Math.random() * 20 + 30) // Estimate views
       const conversionRate = Number(((unitsSold / views) * 100).toFixed(1))
       
-      const averageRating = product.reviews.length > 0 
-        ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length
-        : 0
+      const averageRating = 0 // No reviews in schema yet
       
       return {
         id: product.id,
@@ -240,7 +225,7 @@ const generateProductPerformanceReport = async () => {
         conversions: unitsSold,
         conversionRate,
         averageRating: Number(averageRating.toFixed(1)),
-        reviewCount: product.reviews.length,
+        reviewCount: 0, // No reviews in schema yet
         returnRate: Number((Math.random() * 2).toFixed(1)) // Mock return rate
       }
     })
