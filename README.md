@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E-Commerce Dashboard
 
-## Getting Started
+## ระบบจัดการร้านค้าออนไลน์ที่ครบครัน
+Professional e-commerce dashboard built with modern technologies
 
-First, run the development server:
+## 🚀 Quick Start
 
+### Prerequisites
+- Node.js 18+ (or use Bun.js)
+- PostgreSQL (for production)
+
+### Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+# Using Bun.js (recommended)
+bun install
 bun dev
+
+# Or using npm
+npm install
+npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Access the Application
+- **URL**: http://localhost:3000
+- **Dashboard**: http://localhost:3000/dashboard
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔐 Test Credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Admin Account
+- **Email**: `admin@test.com`
+- **Password**: `password`
+- **Permissions**: Full system access
 
-## Learn More
+### Staff Account  
+- **Email**: `staff@test.com`
+- **Password**: `password`
+- **Permissions**: Limited dashboard access
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠 Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Runtime**: Bun.js 1.2.2
+- **Framework**: Next.js 15.5.3 with Turbopack
+- **Database**: Prisma 6.16.2 + PostgreSQL
+- **Authentication**: NextAuth.js 4.24.11
+- **Styling**: Tailwind CSS 4
+- **Language**: TypeScript 5
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📋 Features Overview
 
-## Deploy on Vercel
+### ✅ Completed
+- [x] Project setup with modern tech stack
+- [x] Comprehensive database schema (20+ models)
+- [x] Authentication system with RBAC
+- [x] Responsive dashboard layout (Thai interface)
+- [x] Professional sidebar navigation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 🚧 In Development
+- [ ] Catalog Management (Products, Inventory, Categories)
+- [ ] Order Management System
+- [ ] Customer CRM Features
+- [ ] Marketing & Pricing Tools
+- [ ] Analytics Dashboard
+- [ ] System Operations Panel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🏗 Architecture
+
+### Database Models
+- **Users & Auth**: Users, Roles, Sessions, Audit Logs
+- **Catalog**: Products, Categories, Brands, Inventory, SKUs
+- **Orders**: Orders, Order Items, Payments, Refunds
+- **Customers**: Customer Profiles, Addresses, Notes
+- **Marketing**: Coupons, Promotions, Flash Sales
+- **Analytics**: Sales Data, Reports, KPIs
+
+### Security Features
+- Role-based access control (Admin/Staff/Viewer)
+- JWT session management
+- Audit logging for all actions
+- Route protection middleware
+
+## 🎨 UI/UX Features
+
+- **Thai Language Interface**: Complete localization
+- **Responsive Design**: Mobile-first approach
+- **Professional Theme**: Clean, modern design
+- **Accessibility**: ARIA labels and keyboard navigation
+- **Dark Mode**: (Coming soon)
+
+## 🔧 Development Notes
+
+### Current Configuration
+- **Environment**: Development mode with in-memory auth
+- **Database**: Schema ready, using test data
+- **Middleware**: Simplified for debugging (will be enhanced)
+
+### Production Deployment
+1. Configure PostgreSQL connection in `.env`
+2. Run database migrations: `bunx prisma migrate deploy`
+3. Enable full middleware and Prisma adapter
+4. Configure OAuth providers (Google, etc.)
+
+## 📊 Performance
+
+- **Build Tool**: Turbopack for fast development
+- **Package Manager**: Bun.js for speed
+- **Database**: Prisma for type-safe queries
+- **Caching**: NextAuth.js session caching
+
+## 🤝 Contributing
+
+This is a professional e-commerce dashboard project. Follow Thai coding standards and maintain comprehensive documentation.
+
+## 📝 License
+
+Private project - All rights reserved
+
+---
+
+### System Status: ✅ Ready for Development
+**Next Steps**: Implement catalog management features
+
+**Last Updated**: December 2024

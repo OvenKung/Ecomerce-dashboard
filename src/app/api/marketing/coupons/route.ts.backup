@@ -1,0 +1,259 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+// Mock coupons data
+const mockCoupons = [
+  {
+    id: 'coupon-1',
+    code: 'WELCOME10',
+    name: 'ยินดีต้อนรับสมาชิกใหม่',
+    description: 'ส่วนลด 10% สำหรับสมาชิกใหม่',
+    type: 'PERCENTAGE',
+    value: 10,
+    minimumOrder: 500,
+    maximumDiscount: 200,
+    usageLimit: 100,
+    usageCount: 23,
+    isActive: true,
+    startDate: new Date('2024-01-01'),
+    endDate: new Date('2024-12-31'),
+    applicableProducts: [],
+    applicableCategories: [],
+    customerSegments: ['new'],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-15'),
+  },
+  {
+    id: 'coupon-2',
+    code: 'SAVE50',
+    name: 'ลดทันที 50 บาท',
+    description: 'ลดทันที 50 บาท เมื่อซื้อครบ 1000 บาท',
+    type: 'FIXED',
+    value: 50,
+    minimumOrder: 1000,
+    maximumDiscount: 50,
+    usageLimit: 500,
+    usageCount: 187,
+    isActive: true,
+    startDate: new Date('2024-01-01'),
+    endDate: new Date('2024-06-30'),
+    applicableProducts: [],
+    applicableCategories: [],
+    customerSegments: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-15'),
+  },
+  {
+    id: 'coupon-3',
+    code: 'VIP20',
+    name: 'ส่วนลด VIP 20%',
+    description: 'ส่วนลดพิเศษ 20% สำหรับลูกค้า VIP',
+    type: 'PERCENTAGE',
+    value: 20,
+    minimumOrder: 2000,
+    maximumDiscount: 1000,
+    usageLimit: 50,
+    usageCount: 12,
+    isActive: true,
+    startDate: new Date('2024-01-01'),
+    endDate: new Date('2024-12-31'),
+    applicableProducts: [],
+    applicableCategories: [],
+    customerSegments: ['VIP'],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-15'),
+  },
+  {
+    id: 'coupon-4',
+    code: 'MOBILE15',
+    name: 'ส่วนลดมือถือ 15%',
+    description: 'ส่วนลด 15% สำหรับหมวดสมาร์ทโฟน',
+    type: 'PERCENTAGE',
+    value: 15,
+    minimumOrder: 1500,
+    maximumDiscount: 500,
+    usageLimit: 200,
+    usageCount: 45,
+    isActive: true,
+    startDate: new Date('2024-01-01'),
+    endDate: new Date('2024-03-31'),
+    applicableProducts: [],
+    applicableCategories: ['smartphones'],
+    customerSegments: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-15'),
+  },
+  {
+    id: 'coupon-5',
+    code: 'EXPIRED100',
+    name: 'คูปองหมดอายุแล้ว',
+    description: 'คูปองทดสอบที่หมดอายุแล้ว',
+    type: 'FIXED',
+    value: 100,
+    minimumOrder: 500,
+    maximumDiscount: 100,
+    usageLimit: 10,
+    usageCount: 8,
+    isActive: false,
+    startDate: new Date('2023-01-01'),
+    endDate: new Date('2023-12-31'),
+    applicableProducts: [],
+    applicableCategories: [],
+    customerSegments: [],
+    createdAt: new Date('2023-01-01'),
+    updatedAt: new Date('2023-12-31'),
+  }
+]
+
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || ''
+    const type = searchParams.get('type') || ''
+    const sortBy = searchParams.get('sortBy') || 'createdAt'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
+
+    // Filter coupons
+    let filteredCoupons = mockCoupons
+
+    if (search) {
+      filteredCoupons = filteredCoupons.filter(coupon => 
+        coupon.code.toLowerCase().includes(search.toLowerCase()) ||
+        coupon.name.toLowerCase().includes(search.toLowerCase()) ||
+        coupon.description.toLowerCase().includes(search.toLowerCase())
+      )
+    }
+
+    if (status === 'active') {
+      filteredCoupons = filteredCoupons.filter(coupon => 
+        coupon.isActive && new Date() >= coupon.startDate && new Date() <= coupon.endDate
+      )
+    } else if (status === 'inactive') {
+      filteredCoupons = filteredCoupons.filter(coupon => !coupon.isActive)
+    } else if (status === 'expired') {
+      filteredCoupons = filteredCoupons.filter(coupon => new Date() > coupon.endDate)
+    }
+
+    if (type) {
+      filteredCoupons = filteredCoupons.filter(coupon => coupon.type === type)
+    }
+
+    // Sort coupons
+    filteredCoupons.sort((a, b) => {
+      let aValue: any = a[sortBy as keyof typeof a]
+      let bValue: any = b[sortBy as keyof typeof b]
+      
+      if (sortBy === 'createdAt' || sortBy === 'updatedAt' || sortBy === 'startDate' || sortBy === 'endDate') {
+        aValue = new Date(aValue).getTime()
+        bValue = new Date(bValue).getTime()
+      }
+      
+      if (sortOrder === 'desc') {
+        return aValue > bValue ? -1 : 1
+      }
+      return aValue < bValue ? -1 : 1
+    })
+
+    // Paginate results
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    const paginatedCoupons = filteredCoupons.slice(startIndex, endIndex)
+
+    return NextResponse.json({
+      coupons: paginatedCoupons,
+      pagination: {
+        page,
+        limit,
+        total: filteredCoupons.length,
+        totalPages: Math.ceil(filteredCoupons.length / limit),
+        hasNext: endIndex < filteredCoupons.length,
+        hasPrev: page > 1
+      },
+      summary: {
+        totalCoupons: mockCoupons.length,
+        activeCoupons: mockCoupons.filter(c => c.isActive && new Date() >= c.startDate && new Date() <= c.endDate).length,
+        expiredCoupons: mockCoupons.filter(c => new Date() > c.endDate).length,
+        totalUsage: mockCoupons.reduce((sum, c) => sum + c.usageCount, 0),
+        totalDiscountGiven: mockCoupons.reduce((sum, c) => {
+          if (c.type === 'FIXED') {
+            return sum + (c.value * c.usageCount)
+          } else {
+            // Estimate percentage discount (this would be actual data in real app)
+            return sum + (c.usageCount * c.maximumDiscount * 0.7)
+          }
+        }, 0)
+      }
+    })
+
+  } catch (error) {
+    console.error('Error fetching coupons:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || !['ADMIN', 'MANAGER'].includes(session.user.role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    
+    // Validate required fields
+    const requiredFields = ['code', 'name', 'type', 'value', 'minimumOrder', 'usageLimit', 'startDate', 'endDate']
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 })
+      }
+    }
+
+    // Check if code already exists
+    if (mockCoupons.find(c => c.code === body.code)) {
+      return NextResponse.json({ error: 'Coupon code already exists' }, { status: 400 })
+    }
+
+    const newCoupon = {
+      id: `coupon-${mockCoupons.length + 1}`,
+      code: body.code.toUpperCase(),
+      name: body.name,
+      description: body.description || '',
+      type: body.type,
+      value: body.value,
+      minimumOrder: body.minimumOrder,
+      maximumDiscount: body.maximumDiscount || (body.type === 'FIXED' ? body.value : null),
+      usageLimit: body.usageLimit,
+      usageCount: 0,
+      isActive: body.isActive !== false,
+      startDate: new Date(body.startDate),
+      endDate: new Date(body.endDate),
+      applicableProducts: body.applicableProducts || [],
+      applicableCategories: body.applicableCategories || [],
+      customerSegments: body.customerSegments || [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    mockCoupons.push(newCoupon)
+
+    return NextResponse.json({ 
+      message: 'Coupon created successfully',
+      coupon: newCoupon 
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Error creating coupon:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

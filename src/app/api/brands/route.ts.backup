@@ -1,0 +1,164 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+// Mock data for brands
+const mockBrands = [
+  {
+    id: '1',
+    name: 'Apple',
+    slug: 'apple',
+    description: 'Apple Inc. - การออกแบบและนวัตกรรมระดับโลก',
+    logoUrl: '/images/brands/apple-logo.png',
+    website: 'https://www.apple.com',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: '2',
+    name: 'Samsung',
+    slug: 'samsung',
+    description: 'Samsung Electronics - เทคโนโลยีเพื่อการใช้งานในอนาคต',
+    logoUrl: '/images/brands/samsung-logo.png',
+    website: 'https://www.samsung.com',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: '3',
+    name: 'Xiaomi',
+    slug: 'xiaomi',
+    description: 'Xiaomi Corporation - นวัตกรรมสำหรับทุกคน',
+    logoUrl: '/images/brands/xiaomi-logo.png',
+    website: 'https://www.mi.com',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: '4',
+    name: 'OPPO',
+    slug: 'oppo',
+    description: 'OPPO - เทคโนโลジีและการออกแบบที่เหนือกว่า',
+    logoUrl: '/images/brands/oppo-logo.png',
+    website: 'https://www.oppo.com',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: '5',
+    name: 'Vivo',
+    slug: 'vivo',
+    description: 'Vivo - เทคโนโลยีกล้องและเสียงชั้นนำ',
+    logoUrl: '/images/brands/vivo-logo.png',
+    website: 'https://www.vivo.com',
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+]
+
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const includeInactive = searchParams.get('includeInactive') === 'true'
+    const search = searchParams.get('search') || ''
+
+    let filteredBrands = mockBrands
+
+    // Filter by active status
+    if (!includeInactive) {
+      filteredBrands = filteredBrands.filter(brand => brand.isActive)
+    }
+
+    // Filter by search term
+    if (search) {
+      filteredBrands = filteredBrands.filter(brand =>
+        brand.name.toLowerCase().includes(search.toLowerCase()) ||
+        brand.description.toLowerCase().includes(search.toLowerCase())
+      )
+    }
+
+    // Sort by name
+    filteredBrands.sort((a, b) => a.name.localeCompare(b.name, 'th'))
+
+    return NextResponse.json({
+      brands: filteredBrands,
+      total: filteredBrands.length
+    })
+
+  } catch (error) {
+    console.error('Error fetching brands:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check permissions
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    
+    // Validate required fields
+    const requiredFields = ['name', 'slug']
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        return NextResponse.json(
+          { error: `Missing required field: ${field}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Check if slug already exists
+    const existingBrand = mockBrands.find(brand => brand.slug === body.slug)
+    if (existingBrand) {
+      return NextResponse.json(
+        { error: 'Brand with this slug already exists' },
+        { status: 400 }
+      )
+    }
+
+    // Create new brand (mock implementation)
+    const newBrand = {
+      id: Date.now().toString(),
+      ...body,
+      isActive: body.isActive ?? true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    // In real implementation:
+    // const brand = await prisma.brand.create({ data: newBrand })
+
+    return NextResponse.json(newBrand, { status: 201 })
+
+  } catch (error) {
+    console.error('Error creating brand:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

@@ -1,0 +1,337 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+// Mock data for marketing campaigns
+const mockCampaigns = [
+  {
+    id: '1',
+    name: 'ลดราคาสินค้าแฟชั่น Summer Sale',
+    description: 'แคมเปญลดราคาสินค้าแฟชั่นหน้าร้อน ลดสูงสุด 50%',
+    type: 'DISCOUNT_CAMPAIGN',
+    status: 'ACTIVE',
+    startDate: new Date('2024-06-01'),
+    endDate: new Date('2024-08-31'),
+    budget: 500000,
+    spent: 285000,
+    impressions: 250000,
+    clicks: 15000,
+    conversions: 850,
+    revenue: 1250000,
+    targetAudience: ['NEW_CUSTOMERS', 'FASHION_LOVERS'],
+    channels: ['EMAIL', 'SOCIAL_MEDIA', 'WEBSITE_BANNER'],
+    products: ['fashion-category'],
+    metrics: {
+      ctr: 6.0, // Click-through rate
+      conversionRate: 5.67,
+      roas: 4.38, // Return on ad spend
+      cpa: 335.29 // Cost per acquisition
+    },
+    createdAt: new Date('2024-05-15'),
+    updatedAt: new Date('2024-07-01')
+  },
+  {
+    id: '2',
+    name: 'Welcome Email Series',
+    description: 'อีเมลต้อนรับสำหรับลูกค้าใหม่ พร้อมคูปองส่วนลด 15%',
+    type: 'EMAIL_CAMPAIGN',
+    status: 'ACTIVE',
+    startDate: new Date('2024-01-01'),
+    endDate: new Date('2024-12-31'),
+    budget: 100000,
+    spent: 45000,
+    impressions: 50000,
+    clicks: 8500,
+    conversions: 1200,
+    revenue: 480000,
+    targetAudience: ['NEW_CUSTOMERS'],
+    channels: ['EMAIL'],
+    products: [],
+    metrics: {
+      ctr: 17.0,
+      conversionRate: 14.12,
+      roas: 10.67,
+      cpa: 37.5
+    },
+    createdAt: new Date('2023-12-15'),
+    updatedAt: new Date('2024-07-01')
+  },
+  {
+    id: '3',
+    name: 'โปรโมชั่นวันแม่',
+    description: 'แคมเปญพิเศษเนื่องในวันแม่ ลดราคาสินค้าของขวัญและเครื่องสำอาง',
+    type: 'SEASONAL_CAMPAIGN',
+    status: 'COMPLETED',
+    startDate: new Date('2024-08-01'),
+    endDate: new Date('2024-08-15'),
+    budget: 300000,
+    spent: 280000,
+    impressions: 180000,
+    clicks: 12000,
+    conversions: 950,
+    revenue: 890000,
+    targetAudience: ['EXISTING_CUSTOMERS', 'FEMALE_CUSTOMERS'],
+    channels: ['EMAIL', 'SOCIAL_MEDIA', 'SMS'],
+    products: ['cosmetics-category', 'gifts-category'],
+    metrics: {
+      ctr: 6.67,
+      conversionRate: 7.92,
+      roas: 3.18,
+      cpa: 294.74
+    },
+    createdAt: new Date('2024-07-01'),
+    updatedAt: new Date('2024-08-16')
+  },
+  {
+    id: '4',
+    name: 'Social Media Influencer Campaign',
+    description: 'แคมเปญร่วมมือกับอินฟลูเอนเซอร์เพื่อเพิ่มการรับรู้แบรนด์',
+    type: 'INFLUENCER_CAMPAIGN',
+    status: 'SCHEDULED',
+    startDate: new Date('2024-09-01'),
+    endDate: new Date('2024-09-30'),
+    budget: 750000,
+    spent: 0,
+    impressions: 0,
+    clicks: 0,
+    conversions: 0,
+    revenue: 0,
+    targetAudience: ['MILLENNIALS', 'GEN_Z'],
+    channels: ['SOCIAL_MEDIA', 'INFLUENCER'],
+    products: ['trending-products'],
+    metrics: {
+      ctr: 0,
+      conversionRate: 0,
+      roas: 0,
+      cpa: 0
+    },
+    createdAt: new Date('2024-07-15'),
+    updatedAt: new Date('2024-07-15')
+  },
+  {
+    id: '5',
+    name: 'Back to School Campaign',
+    description: 'แคมเปญกลับเข้าเรียน เหมาะสำหรับนักเรียนและผู้ปกครอง',
+    type: 'SEASONAL_CAMPAIGN',
+    status: 'PAUSED',
+    startDate: new Date('2024-07-15'),
+    endDate: new Date('2024-08-30'),
+    budget: 400000,
+    spent: 120000,
+    impressions: 95000,
+    clicks: 4800,
+    conversions: 280,
+    revenue: 156000,
+    targetAudience: ['STUDENTS', 'PARENTS'],
+    channels: ['EMAIL', 'SOCIAL_MEDIA', 'SEARCH_ADS'],
+    products: ['school-supplies', 'bags-category'],
+    metrics: {
+      ctr: 5.05,
+      conversionRate: 5.83,
+      roas: 1.3,
+      cpa: 428.57
+    },
+    createdAt: new Date('2024-06-20'),
+    updatedAt: new Date('2024-07-20')
+  }
+]
+
+// Mock summary data
+const mockSummary = {
+  totalCampaigns: mockCampaigns.length,
+  activeCampaigns: mockCampaigns.filter(c => c.status === 'ACTIVE').length,
+  completedCampaigns: mockCampaigns.filter(c => c.status === 'COMPLETED').length,
+  scheduledCampaigns: mockCampaigns.filter(c => c.status === 'SCHEDULED').length,
+  totalBudget: mockCampaigns.reduce((sum, c) => sum + c.budget, 0),
+  totalSpent: mockCampaigns.reduce((sum, c) => sum + c.spent, 0),
+  totalRevenue: mockCampaigns.reduce((sum, c) => sum + c.revenue, 0),
+  totalConversions: mockCampaigns.reduce((sum, c) => sum + c.conversions, 0),
+  averageROAS: mockCampaigns.filter(c => c.metrics.roas > 0).reduce((sum, c) => sum + c.metrics.roas, 0) / mockCampaigns.filter(c => c.metrics.roas > 0).length
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const search = searchParams.get('search') || ''
+    const status = searchParams.get('status') || ''
+    const type = searchParams.get('type') || ''
+    const sortBy = searchParams.get('sortBy') || 'createdAt'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
+
+    let filteredCampaigns = [...mockCampaigns]
+
+    // Apply search filter
+    if (search) {
+      filteredCampaigns = filteredCampaigns.filter(campaign =>
+        campaign.name.toLowerCase().includes(search.toLowerCase()) ||
+        campaign.description.toLowerCase().includes(search.toLowerCase())
+      )
+    }
+
+    // Apply status filter
+    if (status) {
+      filteredCampaigns = filteredCampaigns.filter(campaign => 
+        campaign.status.toLowerCase() === status.toLowerCase()
+      )
+    }
+
+    // Apply type filter
+    if (type) {
+      filteredCampaigns = filteredCampaigns.filter(campaign => 
+        campaign.type === type
+      )
+    }
+
+    // Apply sorting
+    filteredCampaigns.sort((a, b) => {
+      let aValue = a[sortBy as keyof typeof a]
+      let bValue = b[sortBy as keyof typeof b]
+
+      if (aValue instanceof Date) {
+        aValue = aValue.getTime()
+      }
+      if (bValue instanceof Date) {
+        bValue = bValue.getTime()
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+      }
+    })
+
+    // Apply pagination
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    const paginatedCampaigns = filteredCampaigns.slice(startIndex, endIndex)
+
+    return NextResponse.json({
+      campaigns: paginatedCampaigns,
+      summary: mockSummary,
+      pagination: {
+        page,
+        limit,
+        total: filteredCampaigns.length,
+        totalPages: Math.ceil(filteredCampaigns.length / limit)
+      }
+    })
+
+  } catch (error) {
+    console.error('Error fetching marketing campaigns:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user has permission to create campaigns
+    if (!['ADMIN', 'MANAGER'].includes(session.user.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const {
+      name,
+      description,
+      type,
+      startDate,
+      endDate,
+      budget,
+      targetAudience,
+      channels,
+      products,
+      status = 'SCHEDULED'
+    } = body
+
+    // Validate required fields
+    if (!name || !description || !type || !startDate || !endDate || !budget) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate dates
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    
+    if (start >= end) {
+      return NextResponse.json(
+        { error: 'End date must be after start date' },
+        { status: 400 }
+      )
+    }
+
+    // Validate budget
+    if (budget <= 0) {
+      return NextResponse.json(
+        { error: 'Budget must be greater than 0' },
+        { status: 400 }
+      )
+    }
+
+    // Create new campaign
+    const newCampaign = {
+      id: (mockCampaigns.length + 1).toString(),
+      name,
+      description,
+      type,
+      status,
+      startDate: start,
+      endDate: end,
+      budget,
+      spent: 0,
+      impressions: 0,
+      clicks: 0,
+      conversions: 0,
+      revenue: 0,
+      targetAudience: targetAudience || [],
+      channels: channels || [],
+      products: products || [],
+      metrics: {
+        ctr: 0,
+        conversionRate: 0,
+        roas: 0,
+        cpa: 0
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+
+    // In a real application, you would save this to the database
+    mockCampaigns.push(newCampaign)
+
+    return NextResponse.json(
+      {
+        message: 'Campaign created successfully',
+        campaign: newCampaign
+      },
+      { status: 201 }
+    )
+
+  } catch (error) {
+    console.error('Error creating marketing campaign:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

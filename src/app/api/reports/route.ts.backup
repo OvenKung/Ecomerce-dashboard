@@ -1,0 +1,405 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+// Mock data for reports
+const generateSalesReport = (startDate: Date, endDate: Date) => {
+  // Generate sample sales data
+  const data = []
+  const current = new Date(startDate)
+  
+  while (current <= endDate) {
+    const revenue = Math.floor(Math.random() * 100000) + 50000
+    const orders = Math.floor(Math.random() * 50) + 20
+    const customers = Math.floor(Math.random() * 30) + 15
+    
+    data.push({
+      date: new Date(current).toISOString().split('T')[0],
+      revenue,
+      orders,
+      customers,
+      averageOrderValue: Math.floor(revenue / orders),
+      conversionRate: (Math.random() * 5 + 2).toFixed(2)
+    })
+    
+    current.setDate(current.getDate() + 1)
+  }
+  
+  return {
+    data,
+    summary: {
+      totalRevenue: data.reduce((sum, d) => sum + d.revenue, 0),
+      totalOrders: data.reduce((sum, d) => sum + d.orders, 0),
+      totalCustomers: data.reduce((sum, d) => sum + d.customers, 0),
+      averageOrderValue: data.reduce((sum, d) => sum + d.averageOrderValue, 0) / data.length,
+      averageConversionRate: data.reduce((sum, d) => sum + parseFloat(d.conversionRate), 0) / data.length
+    }
+  }
+}
+
+const generateInventoryReport = () => {
+  return [
+    {
+      id: '1',
+      productName: 'iPhone 15 Pro Max',
+      sku: 'IPH15PM-256-TB',
+      category: 'สมาร์ทโฟน',
+      brand: 'Apple',
+      currentStock: 25,
+      reservedStock: 5,
+      availableStock: 20,
+      reorderLevel: 10,
+      status: 'IN_STOCK',
+      cost: 35900,
+      value: 897500,
+      turnoverRate: 12.5,
+      daysOnHand: 29
+    },
+    {
+      id: '2',
+      productName: 'Samsung Galaxy S24 Ultra',
+      sku: 'SGS24U-512-BK',
+      category: 'สมาร์ทโฟน',
+      brand: 'Samsung',
+      currentStock: 8,
+      reservedStock: 2,
+      availableStock: 6,
+      reorderLevel: 15,
+      status: 'LOW_STOCK',
+      cost: 32900,
+      value: 263200,
+      turnoverRate: 15.2,
+      daysOnHand: 24
+    },
+    {
+      id: '3',
+      productName: 'MacBook Air M3',
+      sku: 'MBA-M3-256-SG',
+      category: 'แล็ปท็อป',
+      brand: 'Apple',
+      currentStock: 0,
+      reservedStock: 0,
+      availableStock: 0,
+      reorderLevel: 5,
+      status: 'OUT_OF_STOCK',
+      cost: 42900,
+      value: 0,
+      turnoverRate: 8.3,
+      daysOnHand: 0
+    },
+    {
+      id: '4',
+      productName: 'AirPods Pro (2nd generation)',
+      sku: 'APP-2ND-WH',
+      category: 'หูฟัง',
+      brand: 'Apple',
+      currentStock: 45,
+      reservedStock: 8,
+      availableStock: 37,
+      reorderLevel: 20,
+      status: 'IN_STOCK',
+      cost: 7900,
+      value: 355500,
+      turnoverRate: 24.1,
+      daysOnHand: 15
+    },
+    {
+      id: '5',
+      productName: 'Sony WH-1000XM5',
+      sku: 'SWH1000XM5-BK',
+      category: 'หูฟัง',
+      brand: 'Sony',
+      currentStock: 12,
+      reservedStock: 3,
+      availableStock: 9,
+      reorderLevel: 8,
+      status: 'IN_STOCK',
+      cost: 12900,
+      value: 154800,
+      turnoverRate: 18.7,
+      daysOnHand: 19
+    }
+  ]
+}
+
+const generateCustomerReport = () => {
+  return [
+    {
+      id: '1',
+      name: 'สมชาย ใจดี',
+      email: 'somchai@email.com',
+      segment: 'VIP',
+      registrationDate: '2023-05-15',
+      lastOrderDate: '2024-07-25',
+      totalOrders: 15,
+      totalSpent: 245000,
+      averageOrderValue: 16333,
+      lifetime: 450,
+      rfmScore: 'Champion',
+      status: 'ACTIVE'
+    },
+    {
+      id: '2',
+      name: 'สุภาพร สวยงาม',
+      email: 'supaporn@email.com',
+      segment: 'Regular',
+      registrationDate: '2024-01-20',
+      lastOrderDate: '2024-07-20',
+      totalOrders: 8,
+      totalSpent: 125000,
+      averageOrderValue: 15625,
+      lifetime: 190,
+      rfmScore: 'Loyal Customer',
+      status: 'ACTIVE'
+    },
+    {
+      id: '3',
+      name: 'วิชาญ เก่งมาก',
+      email: 'wichan@email.com',
+      segment: 'New',
+      registrationDate: '2024-06-10',
+      lastOrderDate: '2024-06-15',
+      totalOrders: 2,
+      totalSpent: 35000,
+      averageOrderValue: 17500,
+      lifetime: 45,
+      rfmScore: 'New Customer',
+      status: 'ACTIVE'
+    },
+    {
+      id: '4',
+      name: 'มานี รักช้อป',
+      email: 'manee@email.com',
+      segment: 'At Risk',
+      registrationDate: '2023-08-12',
+      lastOrderDate: '2024-03-10',
+      totalOrders: 12,
+      totalSpent: 180000,
+      averageOrderValue: 15000,
+      lifetime: 350,
+      rfmScore: 'At Risk',
+      status: 'INACTIVE'
+    },
+    {
+      id: '5',
+      name: 'ปิยะ สมาร์ท',
+      email: 'piya@email.com',
+      segment: 'Champion',
+      registrationDate: '2022-11-05',
+      lastOrderDate: '2024-07-28',
+      totalOrders: 25,
+      totalSpent: 450000,
+      averageOrderValue: 18000,
+      lifetime: 630,
+      rfmScore: 'Champion',
+      status: 'ACTIVE'
+    }
+  ]
+}
+
+const generateProductPerformanceReport = () => {
+  return [
+    {
+      id: '1',
+      productName: 'iPhone 15 Pro Max',
+      category: 'สมาร์ทโฟน',
+      brand: 'Apple',
+      unitsSold: 125,
+      revenue: 4487500,
+      grossProfit: 1121875,
+      marginPercent: 25,
+      views: 5200,
+      conversions: 125,
+      conversionRate: 2.4,
+      averageRating: 4.8,
+      reviewCount: 89,
+      returnRate: 1.2
+    },
+    {
+      id: '2',
+      productName: 'Samsung Galaxy S24 Ultra',
+      category: 'สมาร์ทโฟน',
+      brand: 'Samsung',
+      unitsSold: 89,
+      revenue: 2928100,
+      grossProfit: 732025,
+      marginPercent: 25,
+      views: 3800,
+      conversions: 89,
+      conversionRate: 2.3,
+      averageRating: 4.6,
+      reviewCount: 67,
+      returnRate: 1.8
+    },
+    {
+      id: '3',
+      productName: 'AirPods Pro (2nd generation)',
+      category: 'หูฟัง',
+      brand: 'Apple',
+      unitsSold: 245,
+      revenue: 1935500,
+      grossProfit: 580650,
+      marginPercent: 30,
+      views: 4100,
+      conversions: 245,
+      conversionRate: 6.0,
+      averageRating: 4.9,
+      reviewCount: 156,
+      returnRate: 0.8
+    },
+    {
+      id: '4',
+      productName: 'MacBook Air M3',
+      category: 'แล็ปท็อป',
+      brand: 'Apple',
+      unitsSold: 67,
+      revenue: 2874300,
+      grossProfit: 861290,
+      marginPercent: 30,
+      views: 2800,
+      conversions: 67,
+      conversionRate: 2.4,
+      averageRating: 4.7,
+      reviewCount: 43,
+      returnRate: 0.5
+    },
+    {
+      id: '5',
+      productName: 'Sony WH-1000XM5',
+      category: 'หูฟัง',
+      brand: 'Sony',
+      unitsSold: 156,
+      revenue: 2012400,
+      grossProfit: 603720,
+      marginPercent: 30,
+      views: 3200,
+      conversions: 156,
+      conversionRate: 4.9,
+      averageRating: 4.5,
+      reviewCount: 98,
+      returnRate: 1.1
+    }
+  ]
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const reportType = searchParams.get('type') || 'sales'
+    const startDate = searchParams.get('startDate') 
+    const endDate = searchParams.get('endDate')
+    const format = searchParams.get('format') || 'json'
+
+    let reportData: any = {}
+
+    switch (reportType) {
+      case 'sales':
+        const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        const end = endDate ? new Date(endDate) : new Date()
+        reportData = generateSalesReport(start, end)
+        break
+
+      case 'inventory':
+        reportData = {
+          data: generateInventoryReport(),
+          summary: {
+            totalProducts: 5,
+            inStock: 3,
+            lowStock: 1,
+            outOfStock: 1,
+            totalValue: 1671000,
+            averageTurnover: 15.76
+          }
+        }
+        break
+
+      case 'customers':
+        reportData = {
+          data: generateCustomerReport(),
+          summary: {
+            totalCustomers: 5,
+            activeCustomers: 4,
+            inactiveCustomers: 1,
+            vipCustomers: 1,
+            averageLifetimeValue: 333000,
+            averageOrderValue: 16491
+          }
+        }
+        break
+
+      case 'products':
+        reportData = {
+          data: generateProductPerformanceReport(),
+          summary: {
+            totalProducts: 5,
+            totalUnitsSold: 682,
+            totalRevenue: 14237800,
+            totalProfit: 3899560,
+            averageMargin: 27.4,
+            averageConversionRate: 3.6
+          }
+        }
+        break
+
+      default:
+        return NextResponse.json({ error: 'Invalid report type' }, { status: 400 })
+    }
+
+    // If CSV format is requested, convert data to CSV
+    if (format === 'csv') {
+      const csv = convertToCSV(reportData.data, reportType)
+      return new NextResponse(csv, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${reportType}_report_${new Date().toISOString().split('T')[0]}.csv"`
+        }
+      })
+    }
+
+    return NextResponse.json({
+      type: reportType,
+      data: reportData,
+      generatedAt: new Date().toISOString(),
+      parameters: {
+        startDate: startDate || null,
+        endDate: endDate || null,
+        format
+      }
+    })
+
+  } catch (error) {
+    console.error('Error generating report:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+function convertToCSV(data: any[], reportType: string): string {
+  if (!data || data.length === 0) return ''
+
+  // Get headers from the first object
+  const headers = Object.keys(data[0])
+  
+  // Create CSV content
+  const csvHeaders = headers.join(',')
+  const csvRows = data.map(row => 
+    headers.map(header => {
+      const value = row[header]
+      // Handle values that might contain commas or quotes
+      if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+        return `"${value.replace(/"/g, '""')}"`
+      }
+      return value
+    }).join(',')
+  )
+
+  return [csvHeaders, ...csvRows].join('\n')
+}

@@ -1,0 +1,164 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+// Mock analytics data
+const mockAnalytics = {
+  overview: {
+    totalRevenue: 2450000,
+    totalOrders: 1250,
+    totalCustomers: 850,
+    conversionRate: 3.2,
+    averageOrderValue: 1960,
+    returningCustomers: 320,
+    newCustomers: 530,
+    revenueGrowth: 12.5,
+    orderGrowth: 8.3,
+    customerGrowth: 15.2
+  },
+  salesChart: {
+    labels: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'],
+    data: [180000, 220000, 190000, 250000, 280000, 240000, 310000, 290000, 320000, 280000, 350000, 380000],
+    orders: [85, 105, 92, 118, 135, 115, 145, 138, 152, 135, 168, 180]
+  },
+  topProducts: [
+    {
+      id: 'prod-1',
+      name: 'iPhone 15 Pro Max',
+      category: 'สมาร์ทโฟน',
+      revenue: 480000,
+      units: 12,
+      growth: 25.5
+    },
+    {
+      id: 'prod-2',
+      name: 'MacBook Pro M3',
+      category: 'คอมพิวเตอร์',
+      revenue: 320000,
+      units: 8,
+      growth: 18.2
+    },
+    {
+      id: 'prod-3',
+      name: 'AirPods Pro',
+      category: 'อุปกรณ์เสริม',
+      revenue: 180000,
+      units: 60,
+      growth: 15.8
+    },
+    {
+      id: 'prod-4',
+      name: 'iPad Air',
+      category: 'แท็บเล็ต',
+      revenue: 150000,
+      units: 15,
+      growth: 12.3
+    },
+    {
+      id: 'prod-5',
+      name: 'Apple Watch',
+      category: 'สมาร์ทวอทช์',
+      revenue: 120000,
+      units: 30,
+      growth: 8.9
+    }
+  ],
+  topCategories: [
+    { name: 'สมาร์ทโฟน', revenue: 680000, percentage: 28.5 },
+    { name: 'คอมพิวเตอร์', revenue: 520000, percentage: 21.8 },
+    { name: 'อุปกรณ์เสริม', revenue: 380000, percentage: 15.9 },
+    { name: 'แท็บเล็ต', revenue: 310000, percentage: 13.0 },
+    { name: 'สมาร์ทวอทช์', revenue: 240000, percentage: 10.1 },
+    { name: 'อื่นๆ', revenue: 250000, percentage: 10.5 }
+  ],
+  customerSegments: [
+    { segment: 'ลูกค้า VIP', count: 120, revenue: 980000, percentage: 40.0 },
+    { segment: 'ลูกค้าประจำ', count: 280, revenue: 850000, percentage: 34.7 },
+    { segment: 'ลูกค้าใหม่', count: 450, revenue: 620000, percentage: 25.3 }
+  ],
+  traffic: {
+    totalVisitors: 25000,
+    uniqueVisitors: 18500,
+    pageViews: 95000,
+    bounceRate: 42.3,
+    avgSessionDuration: '3:45',
+    sources: [
+      { source: 'ค้นหาใน Google', visitors: 12000, percentage: 48.0 },
+      { source: 'โซเชียลมีเดีย', visitors: 6500, percentage: 26.0 },
+      { source: 'เข้าตรง', visitors: 4000, percentage: 16.0 },
+      { source: 'อีเมลการตลาด', visitors: 1800, percentage: 7.2 },
+      { source: 'อื่นๆ', visitors: 700, percentage: 2.8 }
+    ]
+  },
+  inventory: {
+    totalProducts: 450,
+    lowStock: 23,
+    outOfStock: 8,
+    overstocked: 12,
+    totalValue: 12500000,
+    categories: [
+      { name: 'สมาร์ทโฟน', products: 85, value: 4200000 },
+      { name: 'คอมพิวเตอร์', products: 65, value: 3800000 },
+      { name: 'อุปกรณ์เสริม', products: 180, value: 2100000 },
+      { name: 'แท็บเล็ต', products: 45, value: 1500000 },
+      { name: 'สมาร์ทวอทช์', products: 75, value: 900000 }
+    ]
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type') || 'overview'
+    const period = searchParams.get('period') || '12months'
+
+    // Return different data based on type
+    switch (type) {
+      case 'overview':
+        return NextResponse.json({
+          overview: mockAnalytics.overview,
+          salesChart: mockAnalytics.salesChart
+        })
+      
+      case 'products':
+        return NextResponse.json({
+          topProducts: mockAnalytics.topProducts,
+          topCategories: mockAnalytics.topCategories
+        })
+      
+      case 'customers':
+        return NextResponse.json({
+          customerSegments: mockAnalytics.customerSegments,
+          overview: {
+            totalCustomers: mockAnalytics.overview.totalCustomers,
+            newCustomers: mockAnalytics.overview.newCustomers,
+            returningCustomers: mockAnalytics.overview.returningCustomers,
+            customerGrowth: mockAnalytics.overview.customerGrowth
+          }
+        })
+      
+      case 'traffic':
+        return NextResponse.json({
+          traffic: mockAnalytics.traffic
+        })
+      
+      case 'inventory':
+        return NextResponse.json({
+          inventory: mockAnalytics.inventory
+        })
+      
+      default:
+        return NextResponse.json(mockAnalytics)
+    }
+
+  } catch (error) {
+    console.error('Error fetching analytics:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
