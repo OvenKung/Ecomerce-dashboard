@@ -127,7 +127,7 @@ export default function Sidebar() {
 
   const filteredNavigation = navigation.filter(item => {
     if (!item.permission) return true
-    return session?.user?.role && canAccess(session.user.role, item.permission)
+    return session?.user?.role && canAccess(session.user.role as any, item.permission)
   })
 
   const NavigationItem = ({ item, level = 0 }: { item: NavigationItem; level?: number }) => {

@@ -21,7 +21,7 @@ export default function UnauthorizedPage() {
         </p>
           {session?.user?.role && (
             <p className="mt-1 text-xs text-gray-500">
-              Your role: {getRoleDisplayName(session.user.role)}
+              Your role: {getRoleDisplayName(session.user.role as any)}
             </p>
           )}
         </div>

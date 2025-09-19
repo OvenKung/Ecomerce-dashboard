@@ -213,12 +213,14 @@ export function canAccess(userRole: UserRole, resource: string): boolean {
   const requiredRoles = permissions[resource]
   if (!requiredRoles) return false
   
-  return hasAnyPermission(userRole, requiredRoles)
+  return requiredRoles.includes(userRole)
 }
 
 export function getRoleDisplayName(role: UserRole): string {
   const displayNames: Record<UserRole, string> = {
+    SUPER_ADMIN: 'Super Administrator',
     ADMIN: 'Administrator',
+    MANAGER: 'Manager',
     STAFF: 'Staff Member',
     VIEWER: 'Viewer',
   }
@@ -227,7 +229,9 @@ export function getRoleDisplayName(role: UserRole): string {
 
 export function getRoleColor(role: UserRole): string {
   const colors: Record<UserRole, string> = {
+    SUPER_ADMIN: 'bg-purple-100 text-purple-800',
     ADMIN: 'bg-red-100 text-red-800',
+    MANAGER: 'bg-orange-100 text-orange-800',
     STAFF: 'bg-blue-100 text-blue-800',
     VIEWER: 'bg-gray-100 text-gray-800',
   }
@@ -236,7 +240,7 @@ export function getRoleColor(role: UserRole): string {
 
 export function getAvailableRoles(currentUserRole: UserRole): UserRole[] {
   // Users can only assign roles equal to or lower than their own
-  const allRoles: UserRole[] = ['ADMIN', 'STAFF', 'VIEWER']
+  const allRoles: UserRole[] = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF', 'VIEWER']
   const currentLevel = ROLE_HIERARCHY[currentUserRole]
   
   return allRoles.filter(role => ROLE_HIERARCHY[role] <= currentLevel)
