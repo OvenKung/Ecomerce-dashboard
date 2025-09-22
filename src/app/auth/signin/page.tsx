@@ -125,8 +125,7 @@ function SignInForm() {
             บัญชีทดสอบ:
           </p>
           <div className="mt-2 text-xs text-gray-500 space-y-1">
-            <div>ผู้ดูแลระบบ: admin@test.com / password</div>
-            <div>พนักงาน: staff@test.com / password</div>
+            <div>ผู้ดูแลระบบ: superadmin@example.com / admin123</div>
           </div>
         </div>
       </div>

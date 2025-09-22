@@ -28,9 +28,9 @@ Access: <http://localhost:3000/dashboard>
 
 | บทบาท | Email | Password | สิทธิ์การเข้าถึง |
 |--------|-------|----------|----------------|
-| Super Admin | admin@test.com | password | เข้าถึงได้ทุกระบบ |
-| Manager | manager@test.com | 123456 | จัดการสินค้าและออเดอร์ |
-| Staff | staff@test.com | 123456 | ดูข้อมูลและอัพเดทสถานะ |
+| Super Admin | superadmin@example.com | admin123 | เข้าถึงได้ทุกระบบ |
+| Manager | manager@example.com | admin123 | จัดการสินค้าและออเดอร์ |
+| Staff | staff@example.com | admin123 | ดูข้อมูลและอัพเดทสถานะ |
 
 ## Features
 
