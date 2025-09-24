@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function GET() {
+  // Require authenticated session to avoid exposing sensitive DB info
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized', message: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' }, { status: 401 })
+  }
   try {
     console.log('🔍 Testing database connection...')
     

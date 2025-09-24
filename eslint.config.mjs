@@ -10,12 +10,16 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Files/directories to ignore (replaces deprecated .eslintignore behavior)
+  {
+    ignores: [".next/**", "node_modules/**", "dist/**", "out/**"]
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
-      // Disable strict rules for production build
+      // Relax some rules to make linting actionable in this repo
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": "warn", 
+      "@typescript-eslint/no-unused-vars": "warn",
       "react-hooks/exhaustive-deps": "warn",
       "react/no-unescaped-entities": "warn",
       "@next/next/no-img-element": "warn"

@@ -114,7 +114,7 @@ const navigation: NavigationItem[] = [
     name: 'Settings',
     href: '/dashboard/settings',
     icon: Settings,
-    permission: 'settings.view',
+    permission: 'superadmin.only',
   },
 ]
 
@@ -145,6 +145,11 @@ export default function Sidebar() {
   }
 
   const filteredNavigation = navigation.filter(item => {
+    // Handle special permissions
+    if (item.permission === 'superadmin.only') {
+      return session?.user?.role === 'SUPER_ADMIN'
+    }
+    
     if (!item.permission) return true
     return session?.user?.role && canAccess(session.user.role as any, item.permission)
   }).filter(item => {

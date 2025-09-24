@@ -35,7 +35,7 @@ interface RecentActivity {
 }
 
 export default function DashboardPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activities, setActivities] = useState<RecentActivity[]>([])
@@ -183,6 +183,18 @@ export default function DashboardPage() {
     }
   }, [session])
 
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!session) {
+      router.replace('/auth/signin')
+    } else if (session.user?.role && !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF', 'VIEWER'].includes(session.user.role)) {
+      router.replace('/dashboard/unauthorized')
+    }
+  }, [session, status, router])
+
+  if (status === 'loading') {
+    return null
+  }
   if (!session) {
     return null
   }
