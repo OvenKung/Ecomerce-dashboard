@@ -6,7 +6,7 @@ const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }
 
 // Add CORS headers for debugging
-export async function OPTIONS(request: Request) {
+export async function OPTIONS() {
   return new Response(null, {
     status: 200,
     headers: {

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { authOptions } from './lib/auth'
 
 /**
  * Middleware to protect dashboard pages and API routes.
