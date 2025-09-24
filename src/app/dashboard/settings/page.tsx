@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useToastNotification } from '@/hooks/use-toast-notification'
@@ -99,6 +99,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('store')
+  const hasFetched = useRef(false)
   
   // Settings state
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null)
@@ -192,23 +193,28 @@ export default function SettingsPage() {
     }
   }
 
+  // Prevent refetch loops in production by limiting deps and guarding with a ref
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (status === 'loading') return
-    
+
     if (!session) {
-      router.push('/auth/signin')
+      router.replace('/auth/signin')
       return
     }
-    
+
     // Only SUPER_ADMIN can access settings
     if (session.user?.role !== 'SUPER_ADMIN') {
       toast.showError('เฉพาะ Super Administrator เท่านั้นที่สามารถเข้าถึงการตั้งค่าได้')
-      router.push('/dashboard')
+      router.replace('/dashboard')
       return
     }
-    
-    fetchSettings()
-  }, [session, status, router, toast])
+
+    if (!hasFetched.current) {
+      hasFetched.current = true
+      fetchSettings()
+    }
+  }, [status, session?.user?.role])
 
   // Show loading while checking authentication
   if (status === 'loading') {
