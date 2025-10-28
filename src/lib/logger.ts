@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from './prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
+import { LogLevel } from '@prisma/client';
 
 const log = (level: 'info' | 'warn' | 'error' | 'debug', message: string, details: object = {}) => {
   const logObject = {
