@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -97,8 +98,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  let session
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -167,6 +169,16 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Log product creation
+    await logger.info('Product created', {
+      productId: product.id,
+      productName: product.name,
+      sku: product.sku,
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: (session.user as any).role
+    })
+
     return NextResponse.json({
       message: 'สร้างสินค้าใหม่สำเร็จ',
       product
@@ -174,6 +186,14 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating product:', error)
+    
+    // Log error
+    await logger.error('Failed to create product', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: session?.user?.id,
+      userName: session?.user?.name
+    })
+    
     return NextResponse.json(
       { error: 'ไม่สามารถสร้างสินค้าใหม่ได้' },
       { status: 500 }

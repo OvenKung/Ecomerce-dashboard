@@ -8,6 +8,7 @@ async function main() {
 
   // ลบข้อมูลเก่าทั้งหมด
   console.log('🗑️ ลบข้อมูลเก่า...')
+  await prisma.systemLog.deleteMany()
   await prisma.orderCoupon.deleteMany()
   await prisma.orderItem.deleteMany()
   await prisma.payment.deleteMany()
@@ -959,6 +960,129 @@ async function main() {
 
   console.log('✅ สร้างคำสั่งซื้อและการชำระเงินเรียบร้อยแล้ว')
 
+  // สร้าง System Logs
+  console.log('📝 กำลังสร้างข้อมูล System Logs...')
+  const logLevels = ['INFO', 'WARN', 'ERROR', 'DEBUG'] as const
+  const logSources = ['server', 'client'] as const
+  const endpoints = [
+    '/api/users',
+    '/api/brands',
+    '/api/products',
+    '/api/categories',
+    '/api/orders',
+    '/api/customers',
+    '/api/auth/signin',
+    '/api/auth/signout',
+    '/dashboard',
+    '/dashboard/products',
+    '/dashboard/orders',
+    '/dashboard/users',
+  ]
+  const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+  const statusCodes = [200, 201, 400, 401, 403, 404, 500]
+  const userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
+    'Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X)',
+  ]
+  const ipAddresses = [
+    '192.168.1.100',
+    '192.168.1.101',
+    '10.0.0.50',
+    '172.16.0.25',
+    '203.150.10.5',
+  ]
+
+  const allUsers = [superAdminUser, adminUser, managerUser, staffUser, viewerUser, ...additionalUsers]
+  const logMessages = {
+    INFO: [
+      'ดึงข้อมูลสำเร็จ',
+      'บันทึกข้อมูลสำเร็จ',
+      'อัปเดตข้อมูลสำเร็จ',
+      'ลบข้อมูลสำเร็จ',
+      'ผู้ใช้เข้าสู่ระบบ',
+      'ผู้ใช้ออกจากระบบ',
+      'สร้างรายการใหม่สำเร็จ',
+    ],
+    WARN: [
+      'การดำเนินการใช้เวลานานกว่าปกติ',
+      'ข้อมูลไม่สมบูรณ์',
+      'พยายามเข้าถึงข้อมูลที่ถูกจำกัดสิทธิ์',
+      'สินค้าใกล้หมดสต็อก',
+      'การใช้งาน API ใกล้ถึงขีดจำกัด',
+    ],
+    ERROR: [
+      'ไม่สามารถเชื่อมต่อฐานข้อมูล',
+      'การอัปเดตล้มเหลว',
+      'ข้อมูลไม่ถูกต้อง',
+      'ไม่พบข้อมูลที่ร้องขอ',
+      'การชำระเงินล้มเหลว',
+      'ไม่สามารถส่งอีเมลได้',
+    ],
+    DEBUG: [
+      'ตรวจสอบการเชื่อมต่อ',
+      'กำลังดีบัก API endpoint',
+      'ตรวจสอบค่า parameters',
+      'ทดสอบการทำงานของฟังก์ชัน',
+    ],
+  }
+
+  // สร้าง logs ย้อนหลัง 30 วัน
+  const logsToCreate = []
+  const now = new Date()
+  for (let i = 0; i < 200; i++) {
+    const daysAgo = Math.floor(Math.random() * 30)
+    const hoursAgo = Math.floor(Math.random() * 24)
+    const minutesAgo = Math.floor(Math.random() * 60)
+    
+    const createdAt = new Date(now)
+    createdAt.setDate(createdAt.getDate() - daysAgo)
+    createdAt.setHours(createdAt.getHours() - hoursAgo)
+    createdAt.setMinutes(createdAt.getMinutes() - minutesAgo)
+
+    const level = logLevels[Math.floor(Math.random() * logLevels.length)]
+    const source = logSources[Math.floor(Math.random() * logSources.length)]
+    const endpoint = endpoints[Math.floor(Math.random() * endpoints.length)]
+    const method = methods[Math.floor(Math.random() * methods.length)]
+    const statusCode = statusCodes[Math.floor(Math.random() * statusCodes.length)]
+    const user = allUsers[Math.floor(Math.random() * allUsers.length)]
+    const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)]
+    const ipAddress = ipAddresses[Math.floor(Math.random() * ipAddresses.length)]
+    const messages = logMessages[level]
+    const message = messages[Math.floor(Math.random() * messages.length)]
+
+    logsToCreate.push({
+      level,
+      message,
+      details: {
+        endpoint,
+        method,
+        statusCode,
+        timestamp: createdAt.toISOString(),
+        requestId: `req_${Math.random().toString(36).substring(7)}`,
+        duration: Math.floor(Math.random() * 1000),
+      },
+      source,
+      endpoint,
+      method,
+      statusCode,
+      userId: user.id,
+      userRole: user.role,
+      userName: user.name,
+      ipAddress,
+      userAgent,
+      createdAt,
+    })
+  }
+
+  // บันทึกทั้งหมดในครั้งเดียว
+  await prisma.systemLog.createMany({
+    data: logsToCreate,
+  })
+
+  console.log('✅ สร้าง System Logs เรียบร้อยแล้ว')
+
   console.log('🎉 Seeding เสร็จสมบูรณ์!')
   console.log('')
   console.log('📊 สรุปข้อมูลที่สร้าง:')
@@ -969,6 +1093,7 @@ async function main() {
   console.log(`👤 ลูกค้า: ${await prisma.customer.count()} คน`)
   console.log(`🛒 คำสั่งซื้อ: ${await prisma.order.count()} รายการ`)
   console.log(`🎫 คูปอง: ${await prisma.coupon.count()} ใบ`)
+  console.log(`📝 System Logs: ${await prisma.systemLog.count()} รายการ`)
   console.log('')
   console.log('🔑 ข้อมูลการเข้าสู่ระบบ:')
   console.log('Admin: admin@example.com / admin123')

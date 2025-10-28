@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -108,8 +109,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  let session
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -149,6 +151,18 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Log successful creation
+    await logger.info('Customer created', {
+      customerId: customer.id,
+      customerEmail: customer.email,
+      customerName: `${customer.firstName} ${customer.lastName}`,
+      status: customer.status,
+      segment: customer.segment,
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: session.user.role
+    })
+
     return NextResponse.json({
       message: 'สร้างลูกค้าใหม่สำเร็จ',
       customer
@@ -156,6 +170,14 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating customer:', error)
+    
+    // Log error
+    await logger.error('Failed to create customer', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: session?.user?.id,
+      userName: session?.user?.name
+    })
+
     return NextResponse.json(
       { error: 'ไม่สามารถสร้างลูกค้าใหม่ได้' },
       { status: 500 }

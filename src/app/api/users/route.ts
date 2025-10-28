@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkPermission } from '@/lib/permission-middleware'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -90,7 +91,8 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error fetching users:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error fetching users', { error: errorMessage });
     return NextResponse.json(
       { error: 'ไม่สามารถโหลดข้อมูลผู้ใช้ได้' },
       { status: 500 }
@@ -190,7 +192,8 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Error creating user:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error creating user', { error: errorMessage });
     return NextResponse.json(
       { error: 'ไม่สามารถสร้างผู้ใช้ได้' },
       { status: 500 }

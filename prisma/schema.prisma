@@ -638,3 +638,33 @@ model Notification {
 
   @@map("notifications")
 }
+
+// System Logs
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+  DEBUG
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  level     LogLevel @default(INFO)
+  message   String
+  details   Json?
+  source    String?  // client, server, api
+  endpoint  String?  // API endpoint if applicable
+  method    String?  // HTTP method if applicable
+  statusCode Int?    // HTTP status code if applicable
+  userId    String?
+  userRole  String?
+  userName  String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([level])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("system_logs")
+}

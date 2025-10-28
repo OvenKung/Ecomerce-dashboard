@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   request: NextRequest,
@@ -46,8 +47,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -119,6 +121,21 @@ export async function PUT(
       }
     })
 
+    // Log successful update
+    await logger.info('Product updated', {
+      productId: updatedProduct.id,
+      productName: updatedProduct.name,
+      sku: updatedProduct.sku,
+      previousSku: existingProduct.sku,
+      previousPrice: existingProduct.price,
+      newPrice: updatedProduct.price,
+      previousQuantity: existingProduct.quantity,
+      newQuantity: updatedProduct.quantity,
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: session.user.role
+    })
+
     return NextResponse.json({
       message: 'อัปเดตสินค้าสำเร็จ',
       product: updatedProduct
@@ -126,6 +143,14 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error updating product:', error)
+    
+    // Log error
+    await logger.error('Failed to update product', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: session?.user?.id,
+      userName: session?.user?.name
+    })
+
     return NextResponse.json(
       { error: 'ไม่สามารถอัปเดตสินค้าได้' },
       { status: 500 }
@@ -137,8 +162,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -174,12 +200,30 @@ export async function DELETE(
       where: { id }
     })
 
+    // Log successful deletion
+    await logger.info('Product deleted', {
+      productId: existingProduct.id,
+      productName: existingProduct.name,
+      sku: existingProduct.sku,
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: session.user.role
+    })
+
     return NextResponse.json({
       message: 'ลบสินค้าสำเร็จ'
     })
 
   } catch (error) {
     console.error('Error deleting product:', error)
+    
+    // Log error
+    await logger.error('Failed to delete product', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: session?.user?.id,
+      userName: session?.user?.name
+    })
+
     return NextResponse.json(
       { error: 'ไม่สามารถลบสินค้าได้' },
       { status: 500 }

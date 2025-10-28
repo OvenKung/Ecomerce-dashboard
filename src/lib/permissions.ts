@@ -59,6 +59,10 @@ export const PERMISSION_DENIED_MESSAGES = {
   SETTINGS: {
     READ: 'คุณไม่มีสิทธิ์ในการดูการตั้งค่าระบบ',
     UPDATE: 'คุณไม่มีสิทธิ์ในการแก้ไขการตั้งค่าระบบ'
+  },
+  LOGS: {
+    READ: 'คุณไม่มีสิทธิ์ในการดูบันทึกระบบ',
+    CREATE: 'คุณไม่มีสิทธิ์ในการบันทึก Log'
   }
 } as const
 
@@ -217,7 +221,8 @@ export function canAccessPage(userRole: UserRole, pathname: string): boolean {
     '/dashboard/reports': { resource: 'REPORTS', action: 'READ' },
     '/dashboard/users': { resource: 'USERS', action: 'READ' },
     '/dashboard/roles': { resource: 'ROLES', action: 'READ' },
-    '/dashboard/settings': { resource: 'SETTINGS', action: 'READ' }
+    '/dashboard/settings': { resource: 'SETTINGS', action: 'READ' },
+    '/dashboard/logging': { resource: 'LOGS', action: 'READ' }
   }
 
   const permission = pagePermissions[pathname]
@@ -280,10 +285,19 @@ export function canAccess(userRole: UserRole, resource: string): boolean {
     // Reports
     'reports.view': ['ADMIN', 'STAFF'],
     'reports.export': ['ADMIN', 'STAFF'],
+    
+    // Logging - SUPER_ADMIN only (empty array means SUPER_ADMIN only)
+    'logging.view': [],
+    'logging.create': [],
   }
 
   const requiredRoles = permissions[resource]
   if (!requiredRoles) return false
+  
+  // If array is empty, only SUPER_ADMIN can access
+  if (requiredRoles.length === 0) {
+    return userRole === 'SUPER_ADMIN'
+  }
   
   return requiredRoles.includes(userRole)
 }

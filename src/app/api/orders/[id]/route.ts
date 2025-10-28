@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   request: NextRequest,
@@ -72,8 +73,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -136,6 +138,18 @@ export async function PUT(
       }
     })
 
+    // Log successful update
+    await logger.info('Order updated', {
+      orderId: updatedOrder.id,
+      orderNumber: updatedOrder.orderNumber,
+      previousStatus: existingOrder.status,
+      newStatus: status || existingOrder.status,
+      trackingNumber: trackingNumber || existingOrder.trackingNumber,
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: session.user.role
+    })
+
     return NextResponse.json({
       message: 'อัปเดตคำสั่งซื้อสำเร็จ',
       order: updatedOrder
@@ -143,6 +157,14 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error updating order:', error)
+    
+    // Log error
+    await logger.error('Failed to update order', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: session?.user?.id,
+      userName: session?.user?.name
+    })
+
     return NextResponse.json(
       { error: 'ไม่สามารถอัปเดตคำสั่งซื้อได้' },
       { status: 500 }
@@ -154,8 +176,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -197,12 +220,31 @@ export async function DELETE(
       where: { id }
     })
 
+    // Log successful deletion
+    await logger.info('Order deleted', {
+      orderId: existingOrder.id,
+      orderNumber: existingOrder.orderNumber,
+      orderStatus: existingOrder.status,
+      totalAmount: existingOrder.totalAmount,
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: session.user.role
+    })
+
     return NextResponse.json({
       message: 'ลบคำสั่งซื้อสำเร็จ'
     })
 
   } catch (error) {
     console.error('Error deleting order:', error)
+    
+    // Log error
+    await logger.error('Failed to delete order', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: session?.user?.id,
+      userName: session?.user?.name
+    })
+
     return NextResponse.json(
       { error: 'ไม่สามารถลบคำสั่งซื้อได้' },
       { status: 500 }

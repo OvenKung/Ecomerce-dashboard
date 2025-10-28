@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Card, StatCard } from '@/components/ui/card'
 import { Button, ActionButton } from '@/components/ui/button'
+import { logClient } from '@/lib/logger'
 import './dashboard.css'
 
 interface DashboardStats {
@@ -131,7 +132,7 @@ export default function DashboardPage() {
             customersChange = Math.round(((currentCustomers - previousCustomerCount) / previousCustomerCount) * 100)
           }
         } catch (error) {
-          console.log('Could not fetch previous period data for comparison:', error)
+          logClient('warn', 'Could not fetch previous period data for comparison', { error: error instanceof Error ? error.toString() : String(error) });
           // Use fallback values if comparison fails
           revenueChange = 12
           ordersChange = 8
@@ -161,7 +162,7 @@ export default function DashboardPage() {
 
         setActivities(recentActivities)
       } catch (error) {
-        console.error('Error fetching dashboard data:', error)
+        logClient('error', 'Error fetching dashboard data', { error: error instanceof Error ? error.toString() : String(error) });
         // Fallback to default stats if API fails
         setStats({
           totalRevenue: 0,

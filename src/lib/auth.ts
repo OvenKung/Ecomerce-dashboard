@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -62,10 +63,23 @@ export const authOptions: NextAuthOptions = {
 
           if (user.status !== 'ACTIVE') {
             console.log('❌ User not active, status:', user.status)
+            await logger.warn('Login attempt with inactive account', {
+              email: credentials.email,
+              status: user.status
+            })
             return null
           }
 
           console.log('✅ Login successful for user:', user.email)
+          
+          // Log successful login
+          await logger.info('User logged in successfully', {
+            userId: user.id,
+            userEmail: user.email,
+            userName: user.name,
+            userRole: user.role
+          })
+          
           return {
             id: user.id,
             email: user.email,
@@ -75,6 +89,10 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (error) {
           console.error('❌ Database error during authorization:', error)
+          await logger.error('Authentication error', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            email: credentials.email
+          })
           return null
         }
       }

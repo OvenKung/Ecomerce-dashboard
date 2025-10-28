@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getServerSession(authOptions);
+    session = await getServerSession(authOptions);
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -81,6 +83,19 @@ export async function PUT(
       }
     });
 
+    // Log successful update
+    await logger.info('Category updated', {
+      categoryId: updatedCategory.id,
+      categoryName: updatedCategory.name,
+      previousName: existingCategory.name,
+      previousSlug: existingCategory.slug,
+      newSlug: updatedCategory.slug,
+      isActive: updatedCategory.isActive,
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: session.user.role
+    })
+
     return NextResponse.json({
       message: 'Category updated successfully',
       category: updatedCategory
@@ -88,6 +103,14 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error updating category:', error);
+    
+    // Log error
+    await logger.error('Failed to update category', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: session?.user?.id,
+      userName: session?.user?.name
+    })
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -99,8 +122,9 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getServerSession(authOptions);
+    session = await getServerSession(authOptions);
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -154,12 +178,30 @@ export async function DELETE(
       where: { id }
     });
 
+    // Log successful deletion
+    await logger.info('Category deleted', {
+      categoryId: existingCategory.id,
+      categoryName: existingCategory.name,
+      categorySlug: existingCategory.slug,
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: session.user.role
+    })
+
     return NextResponse.json({
       message: 'Category deleted successfully'
     });
 
   } catch (error) {
     console.error('Error deleting category:', error);
+    
+    // Log error
+    await logger.error('Failed to delete category', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: session?.user?.id,
+      userName: session?.user?.name
+    })
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
